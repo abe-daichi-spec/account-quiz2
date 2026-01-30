@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>勘定科目 分類トレーニング</title>
+  <title>勘定科目 分類トレーニング（変換なし・BS/PL・20問終了画面）</title>
   <style>
     :root{
       --border:#ddd;
@@ -80,29 +80,42 @@
     .tag.rev   { background: var(--rev-bg);   border-color: var(--rev-bd); }
     .tag.other { background: var(--other-bg); border-color: var(--other-bd); }
 
-    /* ★ 正解/不正解を大きく */
+    /* 正解/不正解を大きく */
     #result { font-size: 22px; font-weight: 800; margin-top: 10px; }
     #result .ok, #result .ng { font-size: 30px; }
+
+    /* 20問終了画面 */
+    #stageClear { display:none; text-align:center; padding: 24px 0; }
+    #stageClear .title { font-size: 40px; font-weight: 1000; margin: 16px 0; }
+    #stageClear .sub { font-size: 18px; margin: 8px 0 14px; }
+    #stageClear .btn { font-size: 18px; padding: 14px 28px; border-radius: 16px; font-weight: 900; }
+    #stageClear .stats { margin-top: 12px; font-size: 14px; color: var(--text-muted); }
   </style>
 </head>
 
 <body>
-  <h2>勘定科目 分類トレーニング</h2>
-  <b>出題に使う勘定科目は最大20個</b>
+  <h2>勘定科目 分類トレーニング（CSVそのまま・変換なし / BS・PL絞り込み / 20問終了画面）</h2>
+  <p class="muted">
+    同じ階層に <span class="pill">accounts.csv</span>（見出し：<span class="pill">account,type</span>）を置いてください。<br>
+    ※判定はCSVのtypeそのまま（変換なし）。<b>出題に使う勘定科目は最大20個</b>。
+    20問終わると終了画面 → ボタンで2周目に入ります。
   </p>
 
   <div class="card">
     <div class="muted">次の勘定科目の「タイプ」は？</div>
-    <div id="account"
-      <div id="stageClear" style="display:none; text-align:center;">
- 　　 <div style="font-size:36px; font-weight:900; margin:20px 0;">🎉 20問クリア！</div>
- 　　 <div id="lapMsg" style="font-size:18px; margin-bottom:12px;"></div>
- 　　 <button onclick="startNextLap()" style="font-size:18px; padding:14px 28px; border-radius:16px;">
-  　  次の20問へ ▶
-  </button>
-</div>
 
-      class="big">読み込み中…</div>
+    <!-- 通常の出題表示 -->
+    <div id="account" class="big">読み込み中…</div>
+
+    <!-- ★ 20問終了画面（ここがポイント：cardの中に置く） -->
+    <div id="stageClear">
+      <div class="title">🎉 20問クリア！</div>
+      <div id="lapMsg" class="sub"></div>
+      <button class="btn" onclick="startNextLap()">次の20問へ ▶</button>
+      <div class="stats">
+        いまの成績：正解 <span id="scCorrect">0</span> / 回答 <span id="scCount">0</span>（正答率 <span id="scRate">0</span>%）
+      </div>
+    </div>
 
     <div class="toolbar">
       <label class="small">
@@ -119,6 +132,7 @@
 
       <button class="actionBtn" onclick="next()">次へ</button>
       <button class="actionBtn" onclick="resetScore()">リセット</button>
+      <button class="actionBtn" onclick="reload()">CSV再読み込み</button>
     </div>
 
     <div class="legend">
@@ -151,20 +165,10 @@
   </div>
 
 <script>
-function startNextLap(){
-  document.getElementById("stageClear").style.display = "none";
-  document.getElementById("account").style.display = "block";
-  document.getElementById("buttons").style.display = "grid";
-  document.getElementById("result").textContent = "";
-
-  prepareDeck();   // 次の20問をシャッフル
-  next();
-}
-  
   const CSV_PATH = './accounts.csv';
-  const MAX_QUESTIONS = 20; // ★出題に使う勘定科目の上限
+  const MAX_QUESTIONS = 20;
 
-  // ====== ボタンの並び順 ======
+  // ボタンの並び順
   const TYPE_ORDER = [
     '流動資産',
     '固定資産',
@@ -181,39 +185,35 @@ function startNextLap(){
     'その他'
   ];
 
-  // ====== 色分け用：type → 大分類（判定は変換しない。色だけ） ======
+  // 色分け（判定は変換しない）
   const TYPE_TO_GROUP = new Map([
-    // BS
     ['流動資産','asset'], ['固定資産','asset'],
     ['流動負債','liab'],  ['固定負債','liab'],
     ['純資産','equity'],
-    // PL
     ['営業費用','exp'], ['販売費および一般管理費','exp'], ['営業外費用','exp'], ['特別損失','exp'],
     ['営業収益','rev'], ['営業外収益','rev'], ['特別利益','rev'],
-    // その他
     ['その他','other'],
   ]);
-
   const GROUP_TO_BTNCLASS = {
     asset: 'btn-asset', liab: 'btn-liab', equity:'btn-equity',
     exp: 'btn-exp', rev: 'btn-rev', other:'btn-other',
   };
 
-  // ====== BS/PLの定義（絞り込み用） ======
+  // BS/PL
   const BS_TYPES = new Set(['流動資産','固定資産','流動負債','固定負債','純資産']);
   const PL_TYPES = new Set(['営業費用','販売費および一般管理費','営業外費用','特別損失','営業収益','営業外収益','特別利益']);
 
   // 状態
   let allItems = [];   // 全データ {name, type}
-  let items = [];      // フィルタ後
-  let types = [];      // type一覧（ボタン用）
+  let items = [];      // フィルタ後（最大20）
+  let types = [];      // type一覧
   let current = null;
   let answered = false;
 
   let count = 0;
   let correct = 0;
 
-  // 山札（全問シャッフル→順に出す）
+  // 山札
   let deck = [];
   let deckIndex = 0;
   let lap = 0;
@@ -229,6 +229,43 @@ function startNextLap(){
     }
   }
 
+  function sortTypesWithOrder(typeList){
+    const orderIndex = new Map(TYPE_ORDER.map((t,i)=>[t,i]));
+    return [...typeList].sort((a,b)=>{
+      const ai = orderIndex.has(a) ? orderIndex.get(a) : 9999;
+      const bi = orderIndex.has(b) ? orderIndex.get(b) : 9999;
+      if (ai !== bi) return ai - bi;
+      return a.localeCompare(b, 'ja');
+    });
+  }
+
+  function updateRemain(){
+    const remain = Math.max(0, deck.length - deckIndex);
+    document.getElementById('remain').textContent = String(remain);
+    document.getElementById('used').textContent = String(deck.length);
+  }
+
+  function showQuizUI(){
+    document.getElementById("stageClear").style.display = "none";
+    document.getElementById("account").style.display = "block";
+    document.getElementById("buttons").style.display = "grid";
+  }
+
+  function showClearUI(){
+    document.getElementById("account").style.display = "none";
+    document.getElementById("buttons").style.display = "none";
+    document.getElementById("stageClear").style.display = "block";
+
+    // 終了画面に成績を表示
+    document.getElementById("scCorrect").textContent = String(correct);
+    document.getElementById("scCount").textContent = String(count);
+    const rate = count === 0 ? 0 : Math.round((correct / count) * 100);
+    document.getElementById("scRate").textContent = String(rate);
+
+    document.getElementById("lapMsg").textContent =
+      `${lap}周目が終了しました（${deck.length}問）`;
+  }
+
   function prepareDeck(){
     deck = [...items];
     shuffle(deck);
@@ -238,20 +275,172 @@ function startNextLap(){
     updateRemain();
   }
 
-  function updateRemain(){
-    const remain = Math.max(0, deck.length - deckIndex);
-    document.getElementById('remain').textContent = String(remain);
-    document.getElementById('used').textContent = String(deck.length);
+  function startNextLap(){
+    // 2周目へ（同じ20問を再シャッフル）
+    showQuizUI();
+    document.getElementById("result").textContent = "";
+    prepareDeck();
+    next();
   }
 
-  function sortTypesWithOrder(typeList){
-    const orderIndex = new Map(TYPE_ORDER.map((t,i)=>[t,i]));
-    return [...typeList].sort((a,b)=>{
-      const ai = orderIndex.has(a) ? orderIndex.get(a) : 9999;
-      const bi = orderIndex.has(b) ? orderIndex.get(b) : 9999;
-      if (ai !== bi) return ai - bi;
-      return a.localeCompare(b, 'ja');
+  function allowByFilter(xType, filterType){
+    if (filterType === '__ALL__') return true;
+    if (filterType === '__BS__') return BS_TYPES.has(xType);
+    if (filterType === '__PL__') return PL_TYPES.has(xType);
+    if (filterType === '__OTHER__') return xType === 'その他';
+    return xType === filterType;
+  }
+
+  function renderScore(){
+    document.getElementById("count").textContent = count;
+    document.getElementById("correct").textContent = correct;
+    const rate = count === 0 ? 0 : Math.round((correct / count) * 100);
+    document.getElementById("rate").textContent = rate;
+  }
+
+  function show(item){
+    current = item;
+    answered = false;
+    document.getElementById("account").textContent = item ? item.name : "—";
+    document.getElementById("result").textContent = "";
+  }
+
+  function answer(type){
+    if (!current || answered) return;
+    answered = true;
+    count++;
+
+    const ok = (type === current.type);
+    if (ok) correct++;
+
+    document.getElementById("result").innerHTML =
+      ok
+        ? `<span class="ok">正解！</span>（${current.name} → ${current.type}）`
+        : `<span class="ng">不正解</span>（あなた：${type} / 正解：${current.type}）`;
+
+    renderScore();
+  }
+
+  // ★ ここが「20問終わったら終了画面」本体
+  function next(){
+    if (!deck.length) return;
+
+    // 20問すべて出し終えたら終了画面へ（自動で2周目に入らない）
+    if (deckIndex >= deck.length) {
+      showClearUI();
+      return;
+    }
+
+    show(deck[deckIndex]);
+    deckIndex++;
+    updateRemain();
+  }
+
+  function resetScore(){
+    count = 0;
+    correct = 0;
+    renderScore();
+
+    lap = 0;
+    document.getElementById('lap').textContent = "0";
+
+    // 20問を再抽選（フィルタ条件は維持）
+    applyFiltersAndReady();
+  }
+
+  function buildButtons(typeList){
+    const wrap = document.getElementById('buttons');
+    wrap.innerHTML = '';
+    typeList.forEach(t => {
+      const btn = document.createElement('button');
+      btn.className = 'typeBtn';
+      const grp = TYPE_TO_GROUP.get(t) || 'other';
+      btn.classList.add(GROUP_TO_BTNCLASS[grp] || 'btn-other');
+      btn.textContent = t;
+      btn.onclick = () => answer(t);
+      wrap.appendChild(btn);
     });
+  }
+
+  function buildTypeFilter(typeList){
+    const sel = document.getElementById('typeFilter');
+    const cur = sel.value;
+    sel.innerHTML = '';
+
+    const topOptions = [
+      { label: 'すべて', value: '__ALL__' },
+      { label: '貸借対照表（BS）', value: '__BS__' },
+      { label: '損益計算書（PL）', value: '__PL__' },
+      { label: 'その他のみ', value: '__OTHER__' },
+    ];
+    for (const o of topOptions) {
+      const opt = document.createElement('option');
+      opt.textContent = o.label;
+      opt.value = o.value;
+      sel.appendChild(opt);
+    }
+
+    const sep = document.createElement('option');
+    sep.textContent = '────────';
+    sep.value = '__SEP__';
+    sep.disabled = true;
+    sel.appendChild(sep);
+
+    for (const t of typeList) {
+      const opt = document.createElement('option');
+      opt.textContent = t;
+      opt.value = t;
+      sel.appendChild(opt);
+    }
+
+    const allowedVals = new Set(['__ALL__','__BS__','__PL__','__OTHER__', ...typeList]);
+    sel.value = allowedVals.has(cur) ? cur : '__ALL__';
+
+    sel.onchange = () => {
+      if (sel.value === '__SEP__') sel.value = '__ALL__';
+      applyFiltersAndReady();
+    };
+    document.getElementById('toggleOther').onchange = () => applyFiltersAndReady();
+  }
+
+  function applyFiltersAndReady(){
+    showQuizUI();
+
+    const includeOther = document.getElementById('toggleOther').checked;
+    const filterType = document.getElementById('typeFilter').value;
+
+    // 1) 条件で絞る
+    let filtered = allItems.filter(x => {
+      if (!includeOther && x.type === 'その他') return false;
+      if (!allowByFilter(x.type, filterType)) return false;
+      return true;
+    });
+
+    if (!filtered.length){
+      deck = []; deckIndex = 0; lap = 0;
+      document.getElementById('lap').textContent = "0";
+      document.getElementById('account').style.display = "block";
+      document.getElementById('account').textContent = '出題できるデータが0件';
+      document.getElementById('result').innerHTML = `<span class="warn">条件を見直してください。</span>`;
+      document.getElementById('used').textContent = "0";
+      document.getElementById('remain').textContent = "0";
+      return;
+    }
+
+    // 2) 最大20件に制限（毎回ランダム抽選）
+    if (filtered.length > MAX_QUESTIONS) {
+      const tmp = [...filtered];
+      shuffle(tmp);
+      filtered = tmp.slice(0, MAX_QUESTIONS);
+    }
+
+    items = filtered;
+
+    // 3) 山札準備（1周目開始）
+    lap = 0;
+    document.getElementById('lap').textContent = "0";
+    prepareDeck(); // lapが1になる
+    next();
   }
 
   async function loadCSV() {
@@ -296,168 +485,8 @@ function startNextLap(){
     applyFiltersAndReady();
   }
 
-  // filterType: __ALL__ / __BS__ / __PL__ / __OTHER__ / 具体type
-  function allowByFilter(xType, filterType){
-    if (filterType === '__ALL__') return true;
-    if (filterType === '__BS__') return BS_TYPES.has(xType);
-    if (filterType === '__PL__') return PL_TYPES.has(xType);
-    if (filterType === '__OTHER__') return xType === 'その他';
-    return xType === filterType;
-  }
-
-  function buildTypeFilter(typeList){
-    const sel = document.getElementById('typeFilter');
-    const cur = sel.value;
-    sel.innerHTML = '';
-
-    const topOptions = [
-      { label: 'すべて', value: '__ALL__' },
-      { label: '貸借対照表（BS）', value: '__BS__' },
-      { label: '損益計算書（PL）', value: '__PL__' },
-      { label: 'その他のみ', value: '__OTHER__' },
-    ];
-    for (const o of topOptions) {
-      const opt = document.createElement('option');
-      opt.textContent = o.label;
-      opt.value = o.value;
-      sel.appendChild(opt);
-    }
-
-    const sep = document.createElement('option');
-    sep.textContent = '────────';
-    sep.value = '__SEP__';
-    sep.disabled = true;
-    sel.appendChild(sep);
-
-    for (const t of typeList) {
-      const opt = document.createElement('option');
-      opt.textContent = t;
-      opt.value = t;
-      sel.appendChild(opt);
-    }
-
-    const allowedVals = new Set(['__ALL__','__BS__','__PL__','__OTHER__', ...typeList]);
-    sel.value = allowedVals.has(cur) ? cur : '__ALL__';
-
-    sel.onchange = () => {
-      if (sel.value === '__SEP__') sel.value = '__ALL__';
-      applyFiltersAndReady();
-    };
-    document.getElementById('toggleOther').onchange = () => applyFiltersAndReady();
-  }
-
-  function buildButtons(typeList){
-    const wrap = document.getElementById('buttons');
-    wrap.innerHTML = '';
-    typeList.forEach(t => {
-      const btn = document.createElement('button');
-      btn.className = 'typeBtn';
-      const grp = TYPE_TO_GROUP.get(t) || 'other';
-      btn.classList.add(GROUP_TO_BTNCLASS[grp] || 'btn-other');
-      btn.textContent = t;
-      btn.onclick = () => answer(t);
-      wrap.appendChild(btn);
-    });
-  }
-
-  function applyFiltersAndReady(){
-    const includeOther = document.getElementById('toggleOther').checked;
-    const filterType = document.getElementById('typeFilter').value;
-
-    // 1) まず条件で絞る
-    let filtered = allItems.filter(x => {
-      if (!includeOther && x.type === 'その他') return false;
-      if (!allowByFilter(x.type, filterType)) return false;
-      return true;
-    });
-
-    if (!filtered.length){
-      deck = []; deckIndex = 0; lap = 0;
-      document.getElementById('lap').textContent = "0";
-      document.getElementById('account').textContent = '出題できるデータが0件';
-      document.getElementById('result').innerHTML = `<span class="warn">条件を見直してください。</span>`;
-      document.getElementById('used').textContent = "0";
-      document.getElementById('remain').textContent = "0";
-      return;
-    }
-
-    // 2) ★最大20件に制限（ここがポイント）
-    if (filtered.length > MAX_QUESTIONS) {
-      const tmp = [...filtered];
-      shuffle(tmp);
-      filtered = tmp.slice(0, MAX_QUESTIONS);
-    }
-
-    items = filtered;
-
-    // 山札準備
-    lap = 0;
-    prepareDeck();
-    next();
-  }
-
-  function renderScore(){
-    document.getElementById("count").textContent = count;
-    document.getElementById("correct").textContent = correct;
-    const rate = count === 0 ? 0 : Math.round((correct / count) * 100);
-    document.getElementById("rate").textContent = rate;
-  }
-
-  function show(item){
-    current = item;
-    answered = false;
-    document.getElementById("account").textContent = item ? item.name : "—";
-    document.getElementById("result").textContent = "";
-  }
-
-  function answer(type){
-    if (!current || answered) return;
-    answered = true;
-    count++;
-
-    const ok = (type === current.type);
-    if (ok) correct++;
-
-    document.getElementById("result").innerHTML =
-      ok
-        ? `<span class="ok">正解！</span>（${current.name} → ${current.type}）`
-        : `<span class="ng">不正解</span>（あなた：${type} / 正解：${current.type}）`;
-
-    renderScore();
-  }
-
-  function next(){
-  if (!deck.length) return;
-
-  // 20問すべて解いたら終了画面
-  if (deckIndex >= deck.length) {
-    document.getElementById("account").style.display = "none";
-    document.getElementById("buttons").style.display = "none";
-    document.getElementById("stageClear").style.display = "block";
-    document.getElementById("lapMsg").textContent =
-      `${lap} 周目が終了しました（${deck.length}問）`;
-    return;
-  }
-
-  show(deck[deckIndex]);
-  deckIndex++;
-  updateRemain();
-}
-
-
-  function resetScore(){
-    count = 0;
-    correct = 0;
-    renderScore();
-
-    lap = 0;
-    if (items.length) {
-      prepareDeck();
-      next();
-    }
-  }
-
   async function reload(){
+    showQuizUI();
     document.getElementById("account").textContent = "読み込み中…";
     document.getElementById("result").textContent = "";
     document.getElementById("hint").textContent = "";
@@ -486,6 +515,7 @@ function startNextLap(){
     try{
       await loadCSV();
     } catch(e){
+      document.getElementById("account").style.display = "block";
       document.getElementById("account").textContent = "CSV読み込みエラー";
       document.getElementById("result").innerHTML =
         `<span class="warn">エラー：</span>${String(e.message).replace(/\n/g,'<br>')}`;
@@ -498,6 +528,7 @@ function startNextLap(){
 </script>
 </body>
 </html>
+
 
 
 
