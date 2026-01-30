@@ -93,7 +93,16 @@
 
   <div class="card">
     <div class="muted">次の勘定科目の「タイプ」は？</div>
-    <div id="account" class="big">読み込み中…</div>
+    <div id="account"
+      <div id="stageClear" style="display:none; text-align:center;">
+ 　　 <div style="font-size:36px; font-weight:900; margin:20px 0;">🎉 20問クリア！</div>
+ 　　 <div id="lapMsg" style="font-size:18px; margin-bottom:12px;"></div>
+ 　　 <button onclick="startNextLap()" style="font-size:18px; padding:14px 28px; border-radius:16px;">
+  　  次の20問へ ▶
+  </button>
+</div>
+
+      class="big">読み込み中…</div>
 
     <div class="toolbar">
       <label class="small">
@@ -142,6 +151,16 @@
   </div>
 
 <script>
+function startNextLap(){
+  document.getElementById("stageClear").style.display = "none";
+  document.getElementById("account").style.display = "block";
+  document.getElementById("buttons").style.display = "grid";
+  document.getElementById("result").textContent = "";
+
+  prepareDeck();   // 次の20問をシャッフル
+  next();
+}
+  
   const CSV_PATH = './accounts.csv';
   const MAX_QUESTIONS = 20; // ★出題に使う勘定科目の上限
 
@@ -408,16 +427,23 @@
   }
 
   function next(){
-    if (!deck.length) return;
+  if (!deck.length) return;
 
-    if (deckIndex >= deck.length) {
-      prepareDeck(); // 1周終わったら再シャッフル
-    }
-
-    show(deck[deckIndex]);
-    deckIndex++;
-    updateRemain();
+  // 20問すべて解いたら終了画面
+  if (deckIndex >= deck.length) {
+    document.getElementById("account").style.display = "none";
+    document.getElementById("buttons").style.display = "none";
+    document.getElementById("stageClear").style.display = "block";
+    document.getElementById("lapMsg").textContent =
+      `${lap} 周目が終了しました（${deck.length}問）`;
+    return;
   }
+
+  show(deck[deckIndex]);
+  deckIndex++;
+  updateRemain();
+}
+
 
   function resetScore(){
     count = 0;
@@ -472,6 +498,7 @@
 </script>
 </body>
 </html>
+
 
 
 
