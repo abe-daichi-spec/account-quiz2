@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>勘定科目 分類トレーニング（変換なし・BS/PL・20問終了画面）</title>
+  <title>勘定科目 分類トレーニング</title>
   <style>
     :root{
       --border:#ddd;
@@ -95,9 +95,7 @@
 
 <body>
   <h2>勘定科目 分類トレーニング（CSVそのまま・変換なし / BS・PL絞り込み / 20問終了画面）</h2>
-  <p class="muted">
-    同じ階層に <span class="pill">accounts.csv</span>（見出し：<span class="pill">account,type</span>）を置いてください。<br>
-    ※判定はCSVのtypeそのまま（変換なし）。<b>出題に使う勘定科目は最大20個</b>。
+　　<b>出題に使う勘定科目は最大20個</b>。
     20問終わると終了画面 → ボタンで2周目に入ります。
   </p>
 
@@ -132,7 +130,6 @@
 
       <button class="actionBtn" onclick="next()">次へ</button>
       <button class="actionBtn" onclick="resetScore()">リセット</button>
-      <button class="actionBtn" onclick="reload()">CSV再読み込み</button>
     </div>
 
     <div class="legend">
@@ -528,6 +525,7 @@
 </script>
 </body>
 </html>
+
 
 
 
