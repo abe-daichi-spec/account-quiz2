@@ -1,535 +1,687 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>勘定科目 分類トレーニング</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>全商情報1級 用語マスター RPG</title>
   <style>
-    :root{
-      --border:#ddd;
-      --border2:#ccc;
-      --text-muted:#666;
-      --ok:#0a7;
-      --ng:#c33;
-      --warn:#b60;
-      --radius:14px;
-
-      /* 色分け */
-      --asset-bg: #eef6ff;   --asset-bd:#b7d7ff;
-      --liab-bg:  #fff2f2;   --liab-bd:#ffc2c2;
-      --equity-bg:#f3efff;   --equity-bd:#d2c6ff;
-      --exp-bg:   #fff7e6;   --exp-bd:#ffd08a;
-      --rev-bg:   #effff4;   --rev-bd:#b7f0c6;
-      --other-bg: #f5f5f5;   --other-bd:#d9d9d9;
+    :root {
+      --primary: #007bff;
+      --success: #28a745;
+      --danger:  #dc3545;
+      --bg:      #f4f7f9;
+      --card-bg: #ffffff;
+      --border:  #ddd;
+      --muted:   #888;
+      --radius:  14px;
+ 
+      --c1-bg:#eef6ff; --c1-bd:#b7d7ff; --c1-tx:#004488;
+      --c2-bg:#f3efff; --c2-bd:#d2c6ff; --c2-tx:#330088;
+      --c3-bg:#fff2f2; --c3-bd:#ffc2c2; --c3-tx:#880000;
+      --c4-bg:#fff7e6; --c4-bd:#ffd08a; --c4-tx:#884400;
+      --c5-bg:#effff4; --c5-bd:#b7f0c6; --c5-tx:#006622;
     }
-
-    body { font-family: sans-serif; max-width: 920px; margin: 24px auto; padding: 0 12px; }
-    .card { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
-    .muted { color: var(--text-muted); font-size: 14px; }
-    .big { font-size: 30px; font-weight: 800; margin: 10px 0 14px; line-height:1.2; }
-    .ok { color: var(--ok); font-weight: 900; }
-    .ng { color: var(--ng); font-weight: 900; }
-    .warn { color: var(--warn); font-weight: 900; }
-    .small { font-size: 12px; color: var(--text-muted); }
-    .pill { display:inline-block; padding:4px 10px; border:1px solid var(--border); border-radius:999px; font-size:12px; color:#444; }
-
-    .toolbar { display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center; margin: 12px 0 8px; }
-    label { user-select:none; }
-    select { padding: 10px 10px; border-radius: 12px; border: 1px solid var(--border2); }
-    input[type="checkbox"] { transform: scale(1.15); }
-
-    button { border-radius: 14px; border: 1px solid var(--border2); background: #fff; cursor: pointer; }
-    button:hover { opacity: .92; }
-    button:active { transform: translateY(1px); }
-    .actionBtn { padding: 10px 12px; font-weight: 800; white-space: nowrap; }
-
-    .grid { display: grid; gap: 10px; margin-top: 12px; }
-    @media (max-width: 520px){
-      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      padding: 14px 12px 48px;
     }
-    @media (min-width: 521px) and (max-width: 860px){
-      .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+ 
+    .page-header { max-width: 680px; margin: 0 auto 10px; }
+    .page-header h1 { font-size: 19px; font-weight: 800; }
+    .page-header p  { font-size: 12px; color: var(--muted); margin-top: 3px; }
+ 
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      box-shadow: 0 4px 14px rgba(0,0,0,.07);
+      max-width: 680px;
+      margin: 0 auto 14px;
     }
-    @media (min-width: 861px){
-      .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+ 
+    /* ── ステータスバー ── */
+    .status-bar {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; border-radius: 12px;
+      border: 2px solid #333; margin-bottom: 14px;
+      background: linear-gradient(270deg,#ffe6e6,#e6f0ff,#e6ffe6,#fffde6);
+      background-size: 800% 800%;
+      animation: bgAnim 16s ease infinite;
     }
-    .typeBtn{
-      padding: 16px 10px;
-      min-height: 56px;
-      font-size: 16px;
-      font-weight: 800;
-      line-height: 1.1;
-      text-align: center;
+    @keyframes bgAnim {
+      0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%}
     }
-
-    /* ボタン色（大分類） */
-    .btn-asset { background: var(--asset-bg); border-color: var(--asset-bd); }
-    .btn-liab  { background: var(--liab-bg);  border-color: var(--liab-bd);  }
-    .btn-equity{ background: var(--equity-bg);border-color: var(--equity-bd);}
-    .btn-exp   { background: var(--exp-bg);   border-color: var(--exp-bd);   }
-    .btn-rev   { background: var(--rev-bg);   border-color: var(--rev-bd);   }
-    .btn-other { background: var(--other-bg); border-color: var(--other-bd); }
-
-    .summary { margin-top: 10px; display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; }
-    .legend { display:flex; flex-wrap:wrap; gap:8px; margin-top: 8px; }
-    .tag { font-size:12px; padding:4px 10px; border-radius:999px; border:1px solid var(--border); }
-    .tag.asset { background: var(--asset-bg); border-color: var(--asset-bd); }
-    .tag.liab  { background: var(--liab-bg);  border-color: var(--liab-bd); }
-    .tag.equity{ background: var(--equity-bg);border-color: var(--equity-bd);}
-    .tag.exp   { background: var(--exp-bg);   border-color: var(--exp-bd); }
-    .tag.rev   { background: var(--rev-bg);   border-color: var(--rev-bd); }
-    .tag.other { background: var(--other-bg); border-color: var(--other-bd); }
-
-    /* 正解/不正解を大きく */
-    #result { font-size: 22px; font-weight: 800; margin-top: 10px; }
-    #result .ok, #result .ng { font-size: 30px; }
-
-    /* 20問終了画面 */
-    #stageClear { display:none; text-align:center; padding: 24px 0; }
-    #stageClear .title { font-size: 40px; font-weight: 1000; margin: 16px 0; }
-    #stageClear .sub { font-size: 18px; margin: 8px 0 14px; }
-    #stageClear .btn { font-size: 18px; padding: 14px 28px; border-radius: 16px; font-weight: 900; }
-    #stageClear .stats { margin-top: 12px; font-size: 14px; color: var(--text-muted); }
+    .char-icon { font-size: 42px; animation: bounce 2s infinite; flex-shrink:0; }
+    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+    .char-info { flex:1; min-width:0; }
+    .char-name { font-weight:800; font-size:15px; color:#333; }
+    .char-next { font-size:11px; color:#555; margin-top:2px; }
+    #playerName {
+      font-size:14px; padding:5px 8px; margin-bottom:5px;
+      width:100%; max-width:200px;
+      border:2px solid #ccc; border-radius:6px; font-weight:bold; display:block;
+    }
+    #playerName:read-only { background:#eee; color:#555; border-color:#ddd; }
+    .stat-block { text-align:right; flex-shrink:0; }
+    .stat-block .num { font-weight:800; font-size:20px; }
+    .stat-block .lbl { font-size:11px; color:var(--muted); }
+ 
+    /* ── ミニ統計 ── */
+    .mini-stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:14px; }
+    .mini-box {
+      background:#fff; border:1px solid var(--border);
+      border-radius:10px; padding:8px 4px; text-align:center;
+      box-shadow:0 2px 5px rgba(0,0,0,.05);
+    }
+    .mini-box .val { font-size:18px; font-weight:800; display:block; }
+    .mini-box .lbl { font-size:11px; color:var(--muted); display:block; margin-top:1px; }
+ 
+    /* ── ツールバー ── */
+    .toolbar { display:flex; flex-wrap:wrap; gap:8px 10px; align-items:center; margin-bottom:12px; }
+    select {
+      padding:7px 10px; border-radius:8px;
+      border:1px solid var(--border); background:#fff;
+      font-size:13px; font-family:inherit;
+    }
+    button {
+      border-radius:10px; border:1px solid var(--border);
+      background:#fff; cursor:pointer;
+      transition:all .16s; font-family:inherit;
+    }
+    button:hover { opacity:.9; transform:translateY(-1px); box-shadow:0 2px 6px rgba(0,0,0,.1); }
+    .act-btn { padding:8px 14px; font-weight:700; color:#444; font-size:13px; }
+    #mistakeBtn { color:#c33; border-color:#fcc; background:#fff5f5; font-weight:bold; display:none; }
+    .pdf-btn { background:#e8f0fe; border-color:#7baaf7; color:#1a56db; }
+    .pdf-btn:hover { background:#d2e3fc; }
+ 
+    /* ── プログレスバー ── */
+    .prog-wrap { background:#eee; border-radius:99px; height:8px; margin-bottom:14px; overflow:hidden; }
+    .prog-bar  { height:100%; border-radius:99px; background:linear-gradient(90deg,var(--primary),#00c6ff); transition:width .4s ease; width:0%; }
+ 
+    /* ── 問題エリア ── */
+    .q-meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+    .cat-tag { font-size:11px; background:#eee; padding:3px 10px; border-radius:99px; color:#555; }
+    .q-count { font-size:12px; color:var(--muted); }
+    .q-box {
+      background:#f8faff; border:2px solid #d0e4ff;
+      border-radius:12px; padding:16px 18px;
+      margin-bottom:14px; min-height:80px;
+      display:flex; align-items:center; justify-content:center; text-align:center;
+    }
+    .q-text { font-size:15px; font-weight:700; line-height:1.65; color:#1a2a4a; }
+ 
+    /* ── 4択 ── */
+    .choices { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+    @media(max-width:460px){ .choices{ grid-template-columns:1fr; } }
+    .c-btn {
+      padding:13px 10px; min-height:52px;
+      font-size:13px; font-weight:700; line-height:1.3;
+      border-radius:12px; text-align:center; transition:all .14s;
+    }
+    .c-btn:disabled { cursor:default; transform:none !important; box-shadow:none !important; }
+    .c-btn.correct { background:#d4edda !important; border-color:#28a745 !important; color:#155724 !important; box-shadow:0 0 0 3px #28a74540 !important; }
+    .c-btn.wrong   { background:#f8d7da !important; border-color:#dc3545 !important; color:#721c24 !important; }
+ 
+    .col-1 { background:var(--c1-bg); border-color:var(--c1-bd); color:var(--c1-tx); }
+    .col-2 { background:var(--c2-bg); border-color:var(--c2-bd); color:var(--c2-tx); }
+    .col-3 { background:var(--c3-bg); border-color:var(--c3-bd); color:var(--c3-tx); }
+    .col-4 { background:var(--c4-bg); border-color:var(--c4-bd); color:var(--c4-tx); }
+    .col-5 { background:var(--c5-bg); border-color:var(--c5-bd); color:var(--c5-tx); }
+ 
+    /* ── 結果 ── */
+    #resultMsg { font-size:15px; font-weight:700; min-height:1.6em; margin-bottom:4px; }
+    .ok { color:var(--success); font-weight:900; }
+    .ng { color:var(--danger);  font-weight:900; }
+ 
+    /* ── ステージクリア ── */
+    #stageClear { display:none; text-align:center; padding:26px 0; }
+    #stageClear .big-ico { font-size:56px; }
+    #stageClear h2 { font-size:20px; font-weight:800; margin:10px 0 6px; }
+    #stageClear .sub { color:var(--muted); font-size:13px; margin-bottom:18px; }
+    .next-btn { background:#333; color:#fff; padding:12px 26px; font-size:14px; font-weight:700; border-radius:12px; border:none; cursor:pointer; }
+    .next-btn:hover { background:#555; }
+ 
+    /* ── サマリー ── */
+    .summary {
+      display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center;
+      padding-top:12px; border-top:1px solid #eee; margin-top:12px;
+      font-size:13px; color:var(--muted);
+    }
+ 
+    /* ── PDF モーダル ── */
+    #pdfModal {
+      display:none; position:fixed; top:0; left:0;
+      width:100%; height:100%; background:rgba(0,0,0,.6);
+      z-index:300; padding:16px;
+    }
+    .pdf-modal-inner {
+      background:#fff; max-width:760px; height:calc(100vh - 32px);
+      margin:0 auto; border-radius:14px; overflow:hidden;
+      display:flex; flex-direction:column;
+      box-shadow:0 12px 40px rgba(0,0,0,.3);
+    }
+    .pdf-modal-header {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:12px 18px; border-bottom:1px solid #eee; flex-shrink:0;
+    }
+    .pdf-modal-header h3 { font-size:14px; font-weight:800; }
+    .pdf-close-btn { font-size:22px; border:none; background:none; cursor:pointer; line-height:1; }
+    .pdf-modal-body { flex:1; overflow:hidden; }
+    .pdf-modal-body iframe { width:100%; height:100%; border:none; }
+ 
+    /* ── 苦手リストモーダル ── */
+    #mistakeModal {
+      display:none; position:fixed; top:0; left:0;
+      width:100%; height:100%; background:rgba(0,0,0,.5);
+      z-index:200; padding:20px; overflow-y:auto;
+    }
+    .modal-inner {
+      background:#fff; max-width:500px; margin:40px auto;
+      padding:22px; border-radius:16px;
+      box-shadow:0 10px 30px rgba(0,0,0,.25);
+    }
+    .modal-inner h3 { margin-bottom:10px; }
+    .m-item {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:9px 0; border-bottom:1px solid #eee; gap:8px;
+    }
+    .m-item:last-child { border:none; }
+    .m-name { font-weight:bold; font-size:14px; }
+    .m-cat  { font-size:11px; color:#0a7; }
+    .del-btn { font-size:11px; padding:4px 10px; border:1px solid #ccc; background:#f0f0f0; border-radius:6px; white-space:nowrap; cursor:pointer; }
   </style>
 </head>
-
 <body>
-  <h2>勘定科目 分類トレーニング</h2>
-　　<b>出題に使う勘定科目は最大20個</b>。
-    20問終わると終了画面 → ボタンで2周目に入ります。
-  </p>
-
-  <div class="card">
-    <div class="muted">次の勘定科目の「タイプ」は？</div>
-
-    <!-- 通常の出題表示 -->
-    <div id="account" class="big">読み込み中…</div>
-
-    <!-- ★ 20問終了画面（ここがポイント：cardの中に置く） -->
-    <div id="stageClear">
-      <div class="title">🎉 20問終了！次も頑張ろう！</div>
-      <div id="lapMsg" class="sub"></div>
-      <button class="btn" onclick="startNextLap()">次の20問へ ▶</button>
-      <div class="stats">
-        いまの成績：正解 <span id="scCorrect">0</span> / 回答 <span id="scCount">0</span>（正答率 <span id="scRate">0</span>%）
-      </div>
+ 
+<div class="page-header">
+  <h1>📘 全商情報1級 用語マスター RPG</h1>
+  <p>解説を読んで正しい用語を4択から選ぼう！間違えると苦手リストへ自動登録。</p>
+</div>
+ 
+<div class="card">
+  <!-- ステータスバー -->
+  <div class="status-bar">
+    <div class="char-icon" id="charIcon">🥚</div>
+    <div class="char-info">
+      <input type="text" id="playerName" placeholder="名前を入力（必須）" onblur="lockName()">
+      <div class="char-name" id="charName">Lv.1 まなびのたまご</div>
+      <div class="char-next" id="charNext">あと ? 問で進化</div>
     </div>
-
-    <div class="toolbar">
-      <label class="small">
-        <input id="toggleOther" type="checkbox" checked>
-        「その他」も出題に含める
-      </label>
-
-      <label class="small">
-        出題絞り込み：
-        <select id="typeFilter">
-          <option value="__ALL__">すべて</option>
-        </select>
-      </label>
-
-      <button class="actionBtn" onclick="next()">次へ</button>
-      <button class="actionBtn" onclick="resetScore()">リセット</button>
+    <div class="stat-block">
+      <div class="lbl">累計正解</div>
+      <div class="num"><span id="totalAcc">0</span>問</div>
     </div>
-
-    <div class="legend">
-      <span class="tag asset">資産</span>
-      <span class="tag liab">負債</span>
-      <span class="tag equity">純資産</span>
-      <span class="tag exp">費用</span>
-      <span class="tag rev">収益</span>
-      <span class="tag other">その他</span>
-    </div>
-
-    <div id="buttons" class="grid"></div>
-
-    <p id="result" class="muted"></p>
-
-    <div class="summary muted">
-      <span>回答数：<span id="count">0</span></span>
-      <span>正解数：<span id="correct">0</span></span>
-      <span>正答率：<span id="rate">0</span>%</span>
-      <span class="small">
-        （全データ：<span id="total">0</span> /
-        出題に使用：<span id="used">0</span> /
-        タイプ数：<span id="typeCount">0</span> /
-        周回：<span id="lap">0</span> /
-        残り：<span id="remain">0</span>）
-      </span>
-    </div>
-
-    <p id="hint" class="small"></p>
   </div>
-
+ 
+  <!-- ミニ統計 -->
+  <div class="mini-stats">
+    <div class="mini-box"><span class="val" id="sLearned">0</span><span class="lbl">習得済（<span id="sTotal">146</span>語中）</span></div>
+    <div class="mini-box"><span class="val" id="sUnlearned">146</span><span class="lbl">未習得</span></div>
+    <div class="mini-box"><span class="val" id="sPct">0%</span><span class="lbl">達成率</span></div>
+  </div>
+ 
+  <!-- ツールバー -->
+  <div class="toolbar">
+    <select id="catSel" onchange="onFilterChange()">
+      <option value="all">全カテゴリ（146語）</option>
+      <option value="ハードウェア・ソフトウェア">① ハードウェア・ソフトウェア（36語）</option>
+      <option value="通信ネットワーク">② 通信ネットワーク（36語）</option>
+      <option value="情報モラルとセキュリティ">③ 情報モラルとセキュリティ（15語）</option>
+      <option value="関連知識">④ 関連知識（35語）</option>
+      <option value="データベース">⑤ データベース（24語）</option>
+    </select>
+    <select id="modeSel" onchange="onFilterChange()">
+      <option value="all">すべて</option>
+      <option value="unlearned">未習得のみ</option>
+      <option value="learned">習得済のみ</option>
+    </select>
+    <button id="mistakeBtn" class="act-btn" onclick="openMistake()">⚠️ 苦手（<span id="mistakeCnt">0</span>）</button>
+    <button class="act-btn pdf-btn" onclick="openPdf()">📄 用語プリントを見る</button>
+  </div>
+ 
+  <!-- プログレスバー -->
+  <div class="prog-wrap"><div class="prog-bar" id="progBar"></div></div>
+ 
+  <!-- クイズエリア -->
+  <div id="quizArea">
+    <div class="q-meta">
+      <span class="cat-tag" id="qCat">—</span>
+      <span class="q-count" id="qCount">— / —</span>
+    </div>
+    <div class="q-box">
+      <div class="q-text" id="qText">カテゴリを選ぶか、そのままスタート！</div>
+    </div>
+    <div class="choices" id="choicesGrid"></div>
+    <div id="resultMsg"></div>
+  </div>
+ 
+  <!-- ステージクリア -->
+  <div id="stageClear">
+    <div class="big-ico">🎉</div>
+    <h2>ステージクリア！</h2>
+    <div class="sub" id="clearSub"></div>
+    <button class="next-btn" onclick="nextLap()">次のステージへ ▶</button>
+  </div>
+ 
+  <!-- サマリー -->
+  <div class="summary">
+    <span>今回：<span id="sc">0</span> / <span id="tc">0</span> 問正解</span>
+    <span style="margin-left:auto;">残り <span id="remQ">0</span> 問 ／ <span id="lapNum">0</span> 周目</span>
+    <button class="act-btn" onclick="skipQ()">スキップ</button>
+    <button class="act-btn" onclick="resetAll()" style="color:#c33;">リセット</button>
+  </div>
+</div>
+ 
+<!-- PDF モーダル -->
+<div id="pdfModal" onclick="closePdfOutside(event)">
+  <div class="pdf-modal-inner">
+    <div class="pdf-modal-header">
+      <h3>📄 全商情報処理検定1級 用語プリント（ビジネス情報部門）</h3>
+      <button class="pdf-close-btn" onclick="closePdf()">✕</button>
+    </div>
+    <div class="pdf-modal-body">
+      <iframe id="pdfFrame" src="" title="用語プリントPDF"></iframe>
+    </div>
+  </div>
+</div>
+ 
+<!-- 苦手リストモーダル -->
+<div id="mistakeModal">
+  <div class="modal-inner">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h3>📝 苦手リスト</h3>
+      <button onclick="closeMistake()" style="font-size:20px;border:none;background:none;cursor:pointer;">✕</button>
+    </div>
+    <p style="font-size:12px;color:#888;margin-bottom:10px;">間違えた問題が自動追加されます。</p>
+    <div id="mistakeList" style="max-height:320px;overflow-y:auto;border:1px solid #eee;border-radius:8px;padding:8px;"></div>
+    <div style="margin-top:16px;text-align:center;">
+      <button class="act-btn" onclick="closeMistake()">閉じる</button>
+    </div>
+  </div>
+</div>
+ 
 <script>
-  const CSV_PATH = './accounts.csv';
-  const MAX_QUESTIONS = 20;
-
-  // ボタンの並び順
-  const TYPE_ORDER = [
-    '流動資産',
-    '固定資産',
-    '流動負債',
-    '固定負債',
-    '純資産',
-    '営業費用',
-    '販売費および一般管理費',
-    '営業外費用',
-    '特別損失',
-    '営業収益',
-    '営業外収益',
-    '特別利益',
-    'その他'
-  ];
-
-  // 色分け（判定は変換しない）
-  const TYPE_TO_GROUP = new Map([
-    ['流動資産','asset'], ['固定資産','asset'],
-    ['流動負債','liab'],  ['固定負債','liab'],
-    ['純資産','equity'],
-    ['営業費用','exp'], ['販売費および一般管理費','exp'], ['営業外費用','exp'], ['特別損失','exp'],
-    ['営業収益','rev'], ['営業外収益','rev'], ['特別利益','rev'],
-    ['その他','other'],
-  ]);
-  const GROUP_TO_BTNCLASS = {
-    asset: 'btn-asset', liab: 'btn-liab', equity:'btn-equity',
-    exp: 'btn-exp', rev: 'btn-rev', other:'btn-other',
-  };
-
-  // BS/PL
-  const BS_TYPES = new Set(['流動資産','固定資産','流動負債','固定負債','純資産']);
-  const PL_TYPES = new Set(['営業費用','販売費および一般管理費','営業外費用','特別損失','営業収益','営業外収益','特別利益']);
-
-  // 状態
-  let allItems = [];   // 全データ {name, type}
-  let items = [];      // フィルタ後（最大20）
-  let types = [];      // type一覧
-  let current = null;
-  let answered = false;
-
-  let count = 0;
-  let correct = 0;
-
-  // 山札
-  let deck = [];
-  let deckIndex = 0;
-  let lap = 0;
-
-  function normalizeType(s){
-    return String(s ?? '').replace(/\s+/g,' ').trim();
+/* ============================================================
+   146語 問題データ（PDFの番号順・分野通り）
+============================================================ */
+const DATA = [
+  /* ① ハードウェア・ソフトウェア No.1〜36 */
+  {cat:"ハードウェア・ソフトウェア",q:"比較的大規模な開発に向いており、基本設計・外部設計などいくつかの工程に分割してシステムを開発する手法。原則として前の工程には戻らない。",a:"ウォータフォールモデル",w:["スパイラルモデル","プロトタイピングモデル","アジャイルモデル"]},
+  {cat:"ハードウェア・ソフトウェア",q:"試作品に対するユーザ評価をもとに、システムを開発する手法。",a:"プロトタイピングモデル",w:["ウォータフォールモデル","スパイラルモデル","XP"]},
+  {cat:"ハードウェア・ソフトウェア",q:"システムを独立性の高い部分ごとに分割し、設計・プログラミング・テストの工程を繰り返してシステムを開発する手法。",a:"スパイラルモデル",w:["ウォータフォールモデル","プロトタイピングモデル","DevOps"]},
+  {cat:"ハードウェア・ソフトウェア",q:"利用者の要望を把握し、システムに盛り込む機能を決定すること。",a:"用件定義",w:["外部設計","内部設計","プログラム設計"]},
+  {cat:"ハードウェア・ソフトウェア",q:"システム開発において、画面や帳票などを利用者側の視点から設計するシステム開発工程。",a:"外部設計",w:["内部設計","用件定義","プログラム設計"]},
+  {cat:"ハードウェア・ソフトウェア",q:"ソフトウェアのアルゴリズムや入出力データなどを詳細に設計する開発工程。",a:"内部設計",w:["外部設計","用件定義","システムテスト"]},
+  {cat:"ハードウェア・ソフトウェア",q:"内部設計に基づいて、各プログラムの内部構造を設計する開発工程。",a:"プログラム設計",w:["内部設計","外部設計","単体テスト"]},
+  {cat:"ハードウェア・ソフトウェア",q:"プログラム設計の結果を受けて、プログラム言語を用いて実際にプログラムを作成（コーディング）する開発工程。",a:"プログラミング",w:["プログラム設計","内部設計","単体テスト"]},
+  {cat:"ハードウェア・ソフトウェア",q:"開発者だけでなくユーザも参加して、完成されたプログラムの検証を行うこと。",a:"テスト",w:["運用・保守","結合テスト","単体テスト"]},
+  {cat:"ハードウェア・ソフトウェア",q:"個々のプログラム（部品）が、仕様書どおりに機能しているかを確認するテスト。",a:"単体テスト",w:["結合テスト","システムテスト","ブラックボックステスト"]},
+  {cat:"ハードウェア・ソフトウェア",q:"複数のモジュール（部品）を組み合わせて、モジュール間でデータの受け渡しが設計通りに行われているかなどを確認するテスト。",a:"結合テスト",w:["単体テスト","システムテスト","ホワイトボックステスト"]},
+  {cat:"ハードウェア・ソフトウェア",q:"開発したシステム全体が、設計通りの機能を備えているかを確認する最終テスト。",a:"システムテスト",w:["結合テスト","単体テスト","受入テスト"]},
+  {cat:"ハードウェア・ソフトウェア",q:"実際の業務での運用中で生じた問題点を解消するために、システムの改修やデータ項目の追加・削除などを行う作業のこと。",a:"運用・保守",w:["システムテスト","テスト","外部設計"]},
+  {cat:"ハードウェア・ソフトウェア",q:"プログラムの内部構造には着目しないで、データ入力に対する出力結果に注目して実施するテスト。",a:"ブラックボックステスト",w:["ホワイトボックステスト","単体テスト","結合テスト"]},
+  {cat:"ハードウェア・ソフトウェア",q:"プログラムの内部構造や処理の流れに着目し、プログラムが設計通りに動いているかを確認するテスト。",a:"ホワイトボックステスト",w:["ブラックボックステスト","システムテスト","結合テスト"]},
+  {cat:"ハードウェア・ソフトウェア",q:"信頼性・可用性・保守性・完全性・安全性の5項目の英文字の頭文字を組み合わせた、コンピュータシステムに関する評価指標の総称。",a:"RASIS",w:["MTBF","PDCA","KPI"]},
+  {cat:"ハードウェア・ソフトウェア",q:"システムの故障発生が少ないこと。（RASISの評価指標）",a:"信頼性",w:["可用性","保守性","安全性（機密性）"]},
+  {cat:"ハードウェア・ソフトウェア",q:"一定期間にシステムが正常に使える時間の割合が長いこと。（RASISの評価指標）",a:"可用性",w:["信頼性","保守性","完全性（保全性）"]},
+  {cat:"ハードウェア・ソフトウェア",q:"故障の際の修復時間のこと。（RASISの評価指標）",a:"保守性",w:["信頼性","可用性","安全性（機密性）"]},
+  {cat:"ハードウェア・ソフトウェア",q:"データの矛盾が起きないように、その整合性を維持すること。（RASISの評価指標）",a:"完全性（保全性）",w:["安全性（機密性）","保守性","可用性"]},
+  {cat:"ハードウェア・ソフトウェア",q:"不正に情報を持ち出したりすることから守ること。（RASISの評価指標）",a:"安全性（機密性）",w:["完全性（保全性）","保守性","信頼性"]},
+  {cat:"ハードウェア・ソフトウェア",q:"コンピュータシステムが、一定時間内で正常に動作している時間の割合（確率）。",a:"稼働率",w:["スループット","レスポンスタイム","平均故障間隔（MTBF)"]},
+  {cat:"ハードウェア・ソフトウェア",q:"コンピュータシステムが故障してから復旧し、次に故障するまでの平均時間。",a:"平均故障間隔（MTBF)",w:["平均修復時間（MTTR)","稼働率","スループット"]},
+  {cat:"ハードウェア・ソフトウェア",q:"コンピュータシステムが故障してから、完全に復旧するまでの平均時間。",a:"平均修復時間（MTTR)",w:["平均故障間隔（MTBF)","稼働率","レスポンスタイム"]},
+  {cat:"ハードウェア・ソフトウェア",q:"コンピュータシステムや通信回線などが、一定時間内に処理できる仕事量や伝送できる情報量。",a:"スループット",w:["レスポンスタイム","ターンアラウンドタイム","稼働率"]},
+  {cat:"ハードウェア・ソフトウェア",q:"コンピュータシステムに処理を要求してから、最初の応答が得られるまでの時間。",a:"レスポンスタイム",w:["ターンアラウンドタイム","スループット","平均修復時間（MTTR)"]},
+  {cat:"ハードウェア・ソフトウェア",q:"コンピュータに処理実行の指示を出してから、すべての実行結果が得られるまでの時間。",a:"ターンアラウンドタイム",w:["レスポンスタイム","スループット","稼働率"]},
+  {cat:"ハードウェア・ソフトウェア",q:"障害が発生しても、システム全体が機能を停止することなく稼働し続けられるようにする仕組み。",a:"フォールトトレラント",w:["フォールトアボイダンス","フェールセーフ","フェールソフト"]},
+  {cat:"ハードウェア・ソフトウェア",q:"信頼性の高い部品の採用や利用者の教育など、コンピュータシステムに可能な限り故障や障害が起きないようにすること。",a:"フォールトアボイダンス",w:["フォールトトレラント","フェールセーフ","フールプルーフ"]},
+  {cat:"ハードウェア・ソフトウェア",q:"障害が発生しても、被害や障害を最小限に止め、安全性を保つ仕組み。",a:"フェールセーフ",w:["フェールソフト","フールプルーフ","フォールトトレラント"]},
+  {cat:"ハードウェア・ソフトウェア",q:"障害が発生した場合でも、システムの一部を停止して、他のシステムは継続して全体のシステムには支障をおよぼさないようにする仕組み。",a:"フェールソフト",w:["フェールセーフ","フールプルーフ","フォールトアボイダンス"]},
+  {cat:"ハードウェア・ソフトウェア",q:"誤った操作をしても、システムの安全性と信頼性を保つ仕組み。",a:"フールプルーフ",w:["フェールセーフ","フェールソフト","フォールトトレラント"]},
+  {cat:"ハードウェア・ソフトウェア",q:"TCP/IPのコンピュータネットワークに直接接続して使用するHDD（ハードディスクドライブ）のこと。",a:"ＮＡＳ",w:["ＲＡＩＤ","ＳＡＮ","ＮＦＳ"]},
+  {cat:"ハードウェア・ソフトウェア",q:"信頼性や処理速度を向上させるために、複数のハードディスク装置を並列に組み合わせて一体化し、全体を1つのディスク装置のように扱う方式。",a:"RAID",w:["ＮＡＳ","ＳＡＴＡ","クラスタリング"]},
+  {cat:"ハードウェア・ソフトウェア",q:"RAID０のことで、複数のHDDにデータを分散して書き込むこと。",a:"ストライピング",w:["ミラーリング","パリティ","デュプレックス"]},
+  {cat:"ハードウェア・ソフトウェア",q:"RAID１のことで、２台のHDDに同じデータを書き込むこと。",a:"ミラーリング",w:["ストライピング","パリティ","クラスタリング"]},
+ 
+  /* ② 通信ネットワーク No.37〜72 */
+  {cat:"通信ネットワーク",q:"国際標準化機構（ISO）で制定された、ネットワークで使用する機器やデータを送受信する手順など7つの階層に定義したもの。",a:"ＯＳＩ参照モデル",w:["ＴＣＰ/ＩＰモデル","ＩＥＥＥモデル","ＩＳＯモデル"]},
+  {cat:"通信ネットワーク",q:"LANケーブルの中継や分岐に用いられる集線装置。",a:"ハブ",w:["ルータ","ゲートウェイ","スイッチングハブ"]},
+  {cat:"通信ネットワーク",q:"ネットワーク間の接続を行う中継機器の一つで、IPアドレスをもとにデータの行き先を認識して転送し、パケットの経路選択機能などを持つ装置。",a:"ルータ",w:["ハブ","ゲートウェイ","ブリッジ"]},
+  {cat:"通信ネットワーク",q:"ルータが持つ機能の一つで、パケットの通過可否を判断する機能のこと。",a:"パケットフィルタリング",w:["ＮＡＴ","ＤＭＺ","ＶＰＮ"]},
+  {cat:"通信ネットワーク",q:"プロトコルが異なるネットワーク間において、プロトコルを変換することでデータの送受信を可能にするための装置。",a:"ゲートウェイ",w:["ルータ","ハブ","リピータ"]},
+  {cat:"通信ネットワーク",q:"ネットワークを通してコンピュータ同士が通信を行うために決められた手順のことで、通信規約ともいう。",a:"プロトコル",w:["インターフェース","ドライバ","ＡＰＩ"]},
+  {cat:"通信ネットワーク",q:"インターネットやイントラネットなどで標準的に使用され、ＯＳなどの環境が異なるコンピュータ間でも通信を可能にする通信規約。",a:"ＴＣＰ/ＩＰ",w:["ＯＳＩ参照モデル","ＨＴＴＰ","ＳＭＴＰ"]},
+  {cat:"通信ネットワーク",q:"WebサーバとWebブラウザとの間でHTML文書や関連した画像などのデータを送受信するための通信規約。",a:"ＨＴＴＰ",w:["ＦＴＰ","ＳＭＴＰ","ＤＨＣＰ"]},
+  {cat:"通信ネットワーク",q:"HTMLファイルをWebサーバへアップロードするときなど、ネットワークを介してファイルを転送するための通信規約。",a:"ＦＴＰ",w:["ＨＴＴＰ","ＳＭＴＰ","ＳＮＭＰ"]},
+  {cat:"通信ネットワーク",q:"メールサーバのメールボックスに保存されたメールを受信するために用いる通信規約。",a:"ＰＯＰ",w:["ＳＭＴＰ","ＩＭＡＰ","ＨＴＴＰ"]},
+  {cat:"通信ネットワーク",q:"メールサーバの電子メールを管理する通信規約。",a:"ＩＭＡＰ",w:["ＰＯＰ","ＳＭＴＰ","ＭＩＭＥ"]},
+  {cat:"通信ネットワーク",q:"メールを送信・転送するための通信規約。",a:"SMTP",w:["ＰＯＰ","ＩＭＡＰ","ＦＴＰ"]},
+  {cat:"通信ネットワーク",q:"コンピュータをネットワークに接続する際に、ＩＰアドレスなどを自動的に割り当てる規約。",a:"ＤＨＣＰ",w:["ＤＮＳ","ＮＡＴ","ＡＲＰ"]},
+  {cat:"通信ネットワーク",q:"ルータのどのネットワーク機器に割り当てられているハードウェア固有の番号。",a:"ＭＡＣアドレス",w:["ＩＰアドレス","ポート番号","シリアル番号"]},
+  {cat:"通信ネットワーク",q:"ＴＣＰ／ＩＰプロトコルを用いたネットワーク上で、コンピュータを識別するための番号。",a:"ＩＰアドレス",w:["ＭＡＣアドレス","ポート番号","ドメイン名"]},
+  {cat:"通信ネットワーク",q:"1981年に標準化された、インターネットの歴史を支えてきた第4世代の通信プロトコル。",a:"ＩＰｖ４",w:["ＩＰｖ６","ＴＣＰ/ＩＰ","ＣＩＤＲ"]},
+  {cat:"通信ネットワーク",q:"IPv4の「住所不足」を根本的に解決するために開発された第6世代のプロトコル。",a:"ＩＰｖ６",w:["ＩＰｖ４","ＣＩＤＲ","ＮＡＴ"]},
+  {cat:"通信ネットワーク",q:"クラスに依存せず、任意のビット数でネットワークを柔軟に分割する仕組み。",a:"CIDR",w:["サブネットマスク","ＮＡＴ","ＩＰｖ６"]},
+  {cat:"通信ネットワーク",q:"会社や家庭のＬＡＮ内部でコンピュータ機器を識別するために、ネットワークアドレス部とホストアドレス部で構成された番号。",a:"プライベートＩＰアドレス",w:["グローバルＩＰアドレス","ブロードキャストアドレス","ネットワークアドレス"]},
+  {cat:"通信ネットワーク",q:"インターネットに接続されたコンピュータを識別するため、一意となるように割り当てられた番号。",a:"グローバルＩＰアドレス",w:["プライベートＩＰアドレス","ブロードキャストアドレス","ホストアドレス"]},
+  {cat:"通信ネットワーク",q:"ＩＰアドレスから、特定のグループを示すネットワークアドレスを取り出すための値。",a:"サブネットマスク",w:["ＭＡＣアドレス","ポート番号","デフォルトゲートウェイ"]},
+  {cat:"通信ネットワーク",q:"コンピュータネットワークに接続されているすべての機器にデータを送信する特別なアドレス。",a:"ブロードキャストアドレス",w:["ネットワークアドレス","マルチキャストアドレス","グローバルＩＰアドレス"]},
+  {cat:"通信ネットワーク",q:"ＩＰアドレスを構成する32ビットのうち、個々の組織が管理するネットワーク（サブネット）を識別するのに使われる部分。",a:"ネットワークアドレス",w:["ホストアドレス","ブロードキャストアドレス","サブネットマスク"]},
+  {cat:"通信ネットワーク",q:"同一のネットワークグループ内で接続された個々のコンピュータ機器を識別するためのアドレス。",a:"ホストアドレス",w:["ネットワークアドレス","ブロードキャストアドレス","プライベートＩＰアドレス"]},
+  {cat:"通信ネットワーク",q:"ＴＣＰ／ＩＰプロトコルを用いたネットワーク上で、ＩＰアドレスに設けられている補助アドレスであり、アプリケーションの識別をするための番号。",a:"ポート番号",w:["ＩＰアドレス","ＭＡＣアドレス","シーケンス番号"]},
+  {cat:"通信ネットワーク",q:"インターネットのグローバルＩＰアドレスとプライベートＩＰアドレスを１対１で結び付けて相互に変換し、ＬＡＮ内のコンピュータがインターネットを利用できるようにするためのアドレス変換の技術。",a:"ＮＡＴ",w:["ＤＨＣＰ","ＤＮＳ","ＶＰＮ"]},
+  {cat:"通信ネットワーク",q:"「非武装地帯」と呼ばれ、インターネットなどの外部ネットワークと内部ネットワークから隔離された区域（セグメント）のこと。",a:"ＤＭＺ",w:["ＶＰＮ","ＮＡＴ","ＣＩＤＲ"]},
+  {cat:"通信ネットワーク",q:"インターネットを利用して、専用回線に近いセキュリティを確保する通信環境を仮想的に実現する技術。",a:"VPN",w:["ＤＭＺ","ＮＡＴ","ＳＳＬ"]},
+  {cat:"通信ネットワーク",q:"クライアントから問い合わせのあったドメイン名をIPアドレスに変換するための仕組み。",a:"ＤＮＳ",w:["ＤＨＣＰ","ＮＡＴ","ＡＲＰ"]},
+  {cat:"通信ネットワーク",q:"ネットワーク上でデータを送受信するときに、1秒間に転送できるデータのビット数。",a:"通信速度（ｂｐｓ）",w:["転送時間","伝送効率","スループット"]},
+  {cat:"通信ネットワーク",q:"データをインターネット上のサーバなどから送信・転送するときの所要時間。",a:"転送時間",w:["通信速度（ｂｐｓ）","伝送効率","レスポンスタイム"]},
+  {cat:"通信ネットワーク",q:"データ通信において、実質的にデータを送ることができる回線の割合。",a:"伝送効率",w:["転送時間","通信速度（ｂｐｓ）","スループット"]},
+  {cat:"通信ネットワーク",q:"クライアントには必要最小限の機能だけを持たせ、サーバでアプリケーションなどを行うシステム構成。情報漏えい対策としても注目されている。",a:"シンクライアント",w:["ファットクライアント","Ｐ２Ｐ","クラウド"]},
+  {cat:"通信ネットワーク",q:"Webサイトの訪問日時や回数などの情報を、利用者のコンピュータに保存するしくみ。",a:"Ｃｏｏｋｉｅ",w:["セッション","キャッシュ","ローカルストレージ"]},
+  {cat:"通信ネットワーク",q:"各国の言葉や画像・動画など、形式の異なるさまざまなデータを電子メールで扱うための規格。",a:"ＭＩＭＥ",w:["ＳＭＴＰ","ＰＯＰ","ＩＭＡＰ"]},
+  {cat:"通信ネットワーク",q:"インターネットやイントラネットなどの情報通信ネットワークを使って、音声データを送受信する技術。",a:"ＶｏＩＰ",w:["ＶＰＮ","ＩＳＤＮ","ＦＴＴＨ"]},
+ 
+  /* ③ 情報モラルとセキュリティ No.73〜87 */
+  {cat:"情報モラルとセキュリティ",q:"インターネットでデータを送受信する際に、第３者に内容が知られないように、同一の鍵を用いて暗号化と復号を行う方法。",a:"共通鍵暗号方式",w:["公開鍵暗号方式","ハイブリッド方式","電子署名（ディジタル署名）"]},
+  {cat:"情報モラルとセキュリティ",q:"インターネットでデータを送受信する際に、第３者に内容が知られないように、異なる鍵を用いて暗号化と復号を行う方法。",a:"公開鍵暗号方式",w:["共通鍵暗号方式","ハッシュ方式","電子透かし"]},
+  {cat:"情報モラルとセキュリティ",q:"公開鍵暗号方式を応用して、文書の作成者が本人であることと、その文書が改ざんされていないことを確認する技術。電子商取引でよく利用される。",a:"電子署名（ディジタル署名）",w:["ＳＳＬ","認証局（ＣＡ）","共通鍵暗号方式"]},
+  {cat:"情報モラルとセキュリティ",q:"電子商取引で利用される暗号化通信などで必要となる、ディジタル証明書を発行する機関。",a:"認証局（ＣＡ）",w:["ＩＳＰ","ＤＮＳ","プロキシ"]},
+  {cat:"情報モラルとセキュリティ",q:"オンラインショッピングなど、インターネット上で個人情報などのデータを暗号化して安全にやり取りするために広く普及している技術。ＵＲＬは「https://」で始まる。",a:"ＳＳＬ",w:["ＶＰＮ","ファイアウォール","ＤＨＣＰ"]},
+  {cat:"情報モラルとセキュリティ",q:"ＨＴＴＰに、ＳＳＬによるデータ暗号化機能を付加した通信規約。",a:"ＨＴＴＰＳ",w:["ＳＳＬ","ＦＴＰ","ＶＰＮ"]},
+  {cat:"情報モラルとセキュリティ",q:"コンピュータの利用状況やデータ通信の状況を記録したファイル。",a:"ログファイル",w:["ジャーナルファイル","バックアップ","コアダンプ"]},
+  {cat:"情報モラルとセキュリティ",q:"ＯＳやアプリケーションソフトなどコンピュータシステムの動作状態を記録したもの。何らかのトラブルなどの情報も記録される。",a:"システムログ",w:["アクセスログ","ログファイル","監査ログ"]},
+  {cat:"情報モラルとセキュリティ",q:"Webサーバにアクセスした人物が、いつ、どのコンピュータからどのサイトを閲覧したかなどを記録したもの。",a:"アクセスログ",w:["システムログ","ログファイル","エラーログ"]},
+  {cat:"情報モラルとセキュリティ",q:"コンピュータやネットワークのセキュリティへの脅威となる事柄。",a:"インシデント",w:["リスク","脆弱性","脅威"]},
+  {cat:"情報モラルとセキュリティ",q:"将来のリスクに備えるために、リスクを特定して、分析し、評価する活動。",a:"リスクアセスメント",w:["リスクマネジメント","リスク移転","リスク回避"]},
+  {cat:"情報モラルとセキュリティ",q:"発生する可能性のあるリスクに対して、その発生を少なくし、発生した場合の損害を最小限に抑えるために行う一連の活動。",a:"リスクマネジメント",w:["リスクアセスメント","コンプライアンス","ＢＣＰ"]},
+  {cat:"情報モラルとセキュリティ",q:"人間の心理的なスキやミスにつけ込んで、ネットワークに侵入するために必要となるパスワードなどの情報を盗み出す方法のこと。",a:"ソーシャルエンジニアリング",w:["ＳＱＬインジェクション","フィッシング","ブルートフォース"]},
+  {cat:"情報モラルとセキュリティ",q:"攻撃者がわなを仕掛けたWebサイトを訪問したユーザを脆弱性のあるWebサイトに誘導し、スクリプトを実行させ個人情報を盗み出したりする攻撃方法のこと。",a:"クロスサイトスクリプティング",w:["ＳＱＬインジェクション","バッファオーバーフロー","ＤｏＳ攻撃"]},
+  {cat:"情報モラルとセキュリティ",q:"データベースと連動したWebアプリケーションの脆弱性をつき、不正なSQL文を注入することで不正な操作を加える攻撃方法のこと。",a:"ＳＱＬインジェクション",w:["クロスサイトスクリプティング","バッファオーバーフロー","フィッシング"]},
+ 
+  /* ④ 関連知識 No.88〜122 */
+  {cat:"関連知識",q:"4つの原則を守りながら、新しいアイディアを引き出すことを目的に行われる話し合いの技法。",a:"ブレーンストーミング",w:["ＫＪ法","デルファイ法","ロールプレイング"]},
+  {cat:"関連知識",q:"問題点を明確にするために、情報収集→カード・グループ化→図解化→文章化の手順で行われるデータの整理方法。",a:"ＫＪ法",w:["ブレーンストーミング","ＰＥＲＴ","特性要因図"]},
+  {cat:"関連知識",q:"問題を解決するために、複数の条件とその条件に対応する行動を表形式に示した図。",a:"決定表（デシジョンテーブル）",w:["ＤＦＤ","Ｅ－Ｒ図","フローチャート"]},
+  {cat:"関連知識",q:"4つの記号（1組の平行線・矢印・円・四角形）を用いて、データの流れと処理の関係を表す図。",a:"ＤＦＤ",w:["Ｅ－Ｒ図","ＵＭＬ","フローチャート"]},
+  {cat:"関連知識",q:"アローダイアグラムともいい、プロジェクトの日程計画や日程管理に用いられ、相互関係にある作業を矢印でつないだ図。",a:"パート図（ＰＥＲＴ）",w:["ガントチャート","ＷＢＳ","マインドマップ"]},
+  {cat:"関連知識",q:"パート図（ＰＥＲＴ）において、作業の開始から終了までの所要日数が最長となる経路。この経路の一部に遅れが生じると、作業全体のスケジュールに影響する。",a:"クリティカルパス",w:["フロート","マイルストーン","ベースライン"]},
+  {cat:"関連知識",q:"パレート図を使用して、各項目を重要な順に3つのグループに分けて、在庫管理などで分析する方法。",a:"ＡＢＣ分析",w:["パレート図","ＳＷＯＴ分析","ＰＰＭ分析"]},
+  {cat:"関連知識",q:"ＡＢＣ分析の時に用いられることが多いグラフで、データを降順に並べた棒グラフと、その累計比率を表す折れ線グラフからなるグラフ。",a:"パレート図",w:["ヒストグラム","管理表","散布図"]},
+  {cat:"関連知識",q:"移動合計値（過去１年間分の売り上げ累計）という特徴があるデータを用いて、一定期間の売上高の傾向を分析するときに用いるグラフ。",a:"Ｚグラフ",w:["パレート図","ファンチャート","管理表"]},
+  {cat:"関連知識",q:"相関関係にある２つのデータ間の関係や傾向を分析して、結果を予測すること。",a:"回帰分析",w:["散布図","ＡＢＣ分析","クラスター分析"]},
+  {cat:"関連知識",q:"２つの項目の間の相関関係の有無などを示す図表。",a:"散布図",w:["ヒストグラム","パレート図","管理表"]},
+  {cat:"関連知識",q:"２つの項目の間で１つが増加すると、もう１つも増加する関係で、散布図においては点のばらつき具合が右上がりの状態。",a:"正の相関",w:["負の相関","回帰直線（近似直線）","無相関"]},
+  {cat:"関連知識",q:"２つの項目の間で１つが増加すると、もう１つが減少する関係で、散布図においては点のばらつき具合が右下がりの状態。",a:"負の相関",w:["正の相関","回帰直線（近似直線）","無相関"]},
+  {cat:"関連知識",q:"散布図において、ばらつきのあるデータの関係を導くために、誤差が最小になる直線。",a:"回帰直線（近似直線）",w:["正の相関","負の相関","管理表"]},
+  {cat:"関連知識",q:"費用を最小限に抑えて最大の利益を得るための生産計画など、複数の制約条件の中で、最大（最小）値を求める手法のこと。",a:"線形計画法",w:["回帰分析","ＡＢＣ分析","シミュレーション"]},
+  {cat:"関連知識",q:"データの範囲をいくつかの区間に分け、各区間に入るデータの数を柱状で表したグラフ。",a:"ヒストグラム",w:["パレート図","散布図","管理表"]},
+  {cat:"関連知識",q:"中央線と上下一対の限界線を引いて、製品などの特性値をプロットし、品質不良や製造工程の異常を検出して不良原因の除去や再発防止に役立てる。",a:"管理表",w:["ヒストグラム","パレート図","特性要因図"]},
+  {cat:"関連知識",q:"結果とそれに影響を及ぼしたと思われる原因の関係を体系的に表した図。直接的な原因と間接的な原因に分別して、真の問題点を明確にする効果がある。",a:"特性要因図",w:["散布図","管理表","パレート図"]},
+  {cat:"関連知識",q:"ある時点のデータを基準に、その後のデータの変動を比率で表す折れ線グラフのこと。",a:"ファンチャート",w:["Ｚグラフ","パレート図","管理表"]},
+  {cat:"関連知識",q:"自社の現状を、強み・弱み・機会・脅威の４つの要素に整理して、市場環境を分析すること。",a:"ＳＷＯＴ分析",w:["ＰＰＭ分析","ＰＥＳＴ分析","ＡＢＣ分析"]},
+  {cat:"関連知識",q:"事業管理手法の一つで、自社の製品またはサービスを、市場の成長率と市場の占有率から、金の生る木・花形・問題児・負け犬の４つの区分に分類して、事業展開を決定するための手法。",a:"ＰＰＭ分析",w:["ＳＷＯＴ分析","ＡＢＣ分析","ＰＥＲＴ"]},
+  {cat:"関連知識",q:"「法令遵守」といわれるが、企業が法律や条例を守るだけでなく、企業倫理や社会貢献などを含めて自発的に取り組んでいくこと。",a:"コンプライアンス",w:["ガバナンス","ＢＰＲ（業務プロセス再設計）","ＣＳＲ"]},
+  {cat:"関連知識",q:"企業や団体などの組織における情報セキュリティに関する基本的な方針であり、アクセス権限や保護対象範囲の設定などを具体的にまとめたもの。",a:"セキュリティーポリシー",w:["コンプライアンス","ＩＳＭＳ","リスクマネジメント"]},
+  {cat:"関連知識",q:"企業の持つ人材・資金・設備・情報など様々な経営資源を一元的に管理・有効活用し、業務の効率化を図るための経営全体の最適化を目指す手法。",a:"ＥＲＰ（経営資源計画）",w:["ＣＲＭ（顧客関係管理）","ＢＰＲ（業務プロセス再設計）","ＳＣＭ"]},
+  {cat:"関連知識",q:"企業のすべての部門と顧客との間に信頼関係を築いて、企業と顧客の利益を共に向上することを目指す経営手法。",a:"ＣＲＭ（顧客関係管理）",w:["ＥＲＰ（経営資源計画）","ＢＰＲ（業務プロセス再設計）","ＳＦＡ"]},
+  {cat:"関連知識",q:"企業活動に関する売り上げなどの目標を設定して、目標達成のための業務内容・流れ・組織を分析し、最適化や再構築すること。",a:"ＢＰＲ（業務プロセス再設計）",w:["ＣＲＭ（顧客関係管理）","ＥＲＰ（経営資源計画）","ＴＱＭ"]},
+  {cat:"関連知識",q:"他社にはまねできない独自の技術やノウハウのこと。",a:"コアコンピタンス",w:["アウトソーシング","アライアンス","差別化戦略"]},
+  {cat:"関連知識",q:"コスト削減などのために、自社の業務や機能の一部または全部を、それを専門とする外部の専門業者に委託すること。",a:"アウトソーシング",w:["アライアンス","コアコンピタンス","内製化"]},
+  {cat:"関連知識",q:"複数の企業が互いに経済的なメリットを期待するために、企業が連携して協力体制を構築すること。",a:"アライアンス",w:["アウトソーシング","Ｍ＆Ａ","合弁会社"]},
+  {cat:"関連知識",q:"顧客のサーバ自体を、ネットワーク環境の整った場所に設置するサービス。",a:"ハウジングサービス",w:["ホスティングサービス","ＡＳＰ","ＳａａＳ"]},
+  {cat:"関連知識",q:"情報通信ネットワークを利用して、自社のサーバを貸し出すサービス。",a:"ホスティングサービス",w:["ハウジングサービス","ＡＳＰ","ＩａａＳ"]},
+  {cat:"関連知識",q:"アプリケーションソフトの機能をネットワーク経由で顧客にサービスとして提供する事業者のこと。",a:"ASP",w:["ＳａａＳ","ＰａａＳ","ＩａａＳ"]},
+  {cat:"関連知識",q:"顧客が必要とするソフトウェアの機能を、必要な時に必要な分だけをインターネット経由で提供するサービス。",a:"SaaS",w:["ＰａａＳ","ＩａａＳ","ＡＳＰ"]},
+  {cat:"関連知識",q:"ＯＳやプログラム言語など、ソフトウェアを構築及び稼働させるための土台となるプラットフォームをインターネット経由で提供するサービス。",a:"Paas",w:["ＳａａＳ","ＩａａＳ","ＡＳＰ"]},
+  {cat:"関連知識",q:"コンピュータシステムを構築及び稼働させるためのハードウェア基盤をインターネット経由で提供するサービス。",a:"IaaS",w:["ＳａａＳ","ＰａａＳ","ＡＳＰ"]},
+ 
+  /* ⑤ データベース No.123〜146 */
+  {cat:"データベース",q:"データベースにおいて、あるデータを処理しているとき、他からの更新や書き込みなどを制限することによって、データの整合性を保つ仕組み。",a:"排他制御",w:["トランザクション","ロールバック","コミット"]},
+  {cat:"データベース",q:"同じデータに複数のアクセスをする場合の整合性をとるための工夫。",a:"ロック",w:["コミット","ロールバック","チェックポイント"]},
+  {cat:"データベース",q:"データベースにおいて、ファイルを読み込むことは可能だが、レコードのデータの変更はできないこと。",a:"共有ロック",w:["占有ロック","排他制御","デッドロック"]},
+  {cat:"データベース",q:"一つのレコードに対して一つの参照・変更・削除だけができる。データを更新している途中で、他がデータを読み込んだり変更できないようになる。",a:"占有ロック",w:["共有ロック","排他制御","デッドロック"]},
+  {cat:"データベース",q:"排他制御を行った複数の処理が互いにロックをかけることで、相手のロック解除待ち状態が発生してしまい先に進まなくなる状態。",a:"デッドロック",w:["ロールバック","コミット","チェックポイント"]},
+  {cat:"データベース",q:"データベースにおいて、一連の更新処理のこと。",a:"トランザクション",w:["コミット","ロールバック","排他制御"]},
+  {cat:"データベース",q:"データベースにおいて、更新処理などがすべて正常に完結したという宣言。",a:"コミット",w:["ロールバック","ロールフォワード","チェックポイント"]},
+  {cat:"データベース",q:"データベースの更新前と更新後のデータの状態を記録したファイル。",a:"ジャーナルファイル",w:["バックアップファイル","ログファイル","インデックスファイル"]},
+  {cat:"データベース",q:"メモリ上のデータをディスクに書き込むタイミングのこと。障害発生の際、復旧作業に利用されることもある。",a:"チェックポイント",w:["コミット","ロールバック","ジャーナルファイル"]},
+  {cat:"データベース",q:"データベースにおける更新処理の途中などで不都合があった場合、ジャーナルファイルを用いてトランザクション処理開始時点の状態に戻すこと。",a:"ロールバック",w:["ロールフォワード","コミット","リストア"]},
+  {cat:"データベース",q:"データが保存されているハードディスクに障害が発生した場合、バックアップファイルとジャーナルファイルを用いて、障害発生直前の状態に復元すること。",a:"ロールフォワード",w:["ロールバック","コミット","チェックポイント"]},
+  {cat:"データベース",q:"データベースの設計の初期段階で、業務内容を分析して必要なデータや管理方法を検討する作業。",a:"概念設計",w:["論理設計","物理設計","外部設計"]},
+  {cat:"データベース",q:"概念設計の結果をシステム化の対象範囲に限定して定義すること。実際の業務での画面や帳票を参考にして、システムで必要とするデータを洗い出す。",a:"論理設計",w:["概念設計","物理設計","内部設計"]},
+  {cat:"データベース",q:"論理設計の結果を用いて、処理内容などの観点から、ハードウェアの選択や最適配置などの検討を行うこと。主キーやインデックスの設定、必要容量の算定も行う。",a:"物理設計",w:["論理設計","概念設計","外部設計"]},
+  {cat:"データベース",q:"データの矛盾や重複（冗長性）があり、ＤＢＭＳへの負担がかかる表の構造。",a:"非正規形",w:["第１正規化（正規形）","第２正規化（正規形）","第３正規化（正規形）"]},
+  {cat:"データベース",q:"非正規形から、重複して繰り返し現れる項目を排除すること。",a:"第１正規化（正規形）",w:["第２正規化（正規形）","第３正規化（正規形）","非正規形"]},
+  {cat:"データベース",q:"第１正規形から、主キーと関連のある項目を別のテーブルに分割すること。",a:"第２正規化（正規形）",w:["第１正規化（正規形）","第３正規化（正規形）","非正規形"]},
+  {cat:"データベース",q:"第２正規形から、主キーでない項目について、関連のある項目を別のテーブルに分割すること。",a:"第３正規化（正規形）",w:["第２正規化（正規形）","第１正規化（正規形）","非正規形"]},
+  {cat:"データベース",q:"データベース設計において、データの関連性をモデル化するために、「実体」「属性」「関係」の３つの図形を用いて表す図。",a:"Ｅ－Ｒ図",w:["ＤＦＤ","ＵＭＬ","フローチャート"]},
+  {cat:"データベース",q:"一単位として扱われるデータのまとまりや、データベースとして表現すべき対象物のこと。論理設計の段階では、表に相当する。",a:"エンティティ",w:["アトリビュート","リレーションシップ","カーディナリティ"]},
+  {cat:"データベース",q:"エンティティが持つ特性・特徴などの値。",a:"アトリビュート",w:["エンティティ","リレーションシップ","キー"]},
+  {cat:"データベース",q:"エンティティとエンティティの相互関係。",a:"リレーションシップ",w:["アトリビュート","エンティティ","カーディナリティ"]},
+  {cat:"データベース",q:"レコードの追加や削除が勝手に行われないように、データベースの参照関係の整合性に関する規則。",a:"整合性制約（参照整合性）",w:["排他制御","正規化","トランザクション"]},
+  {cat:"データベース",q:"ある表に対して問い合わせを行い、その結果を利用してさらに次の問い合わせを行うときの最初の問い合わせ。",a:"副問い合わせ",w:["結合","ビュー","カーソル"]}
+];
+ 
+const CAT_COL = {
+  "ハードウェア・ソフトウェア": "col-1",
+  "通信ネットワーク":           "col-2",
+  "情報モラルとセキュリティ":   "col-3",
+  "関連知識":                   "col-4",
+  "データベース":               "col-5"
+};
+ 
+const CHARS = [
+  {score:0,   icon:"🥚",name:"Lv.1 まなびのたまご"},
+  {score:20,  icon:"🐣",name:"Lv.2 新人ピヨピヨ"},
+  {score:50,  icon:"🐥",name:"Lv.3 かけだし経理"},
+  {score:100, icon:"🐢",name:"Lv.4 コツコツ亀さん"},
+  {score:180, icon:"🐇",name:"Lv.5 疾風の解答者"},
+  {score:280, icon:"🦉",name:"Lv.6 賢者の知恵"},
+  {score:400, icon:"🐆",name:"Lv.7 猛者の解答師"},
+  {score:550, icon:"🦁",name:"Lv.8 知識の王"},
+  {score:750, icon:"🐲",name:"Lv.9 伝説の学習龍"},
+  {score:1000,icon:"🧚",name:"Lv.10 情報処理マスター"},
+  {score:3000,icon:"👑",name:"Lv.MAX 全商情報の神"}
+];
+ 
+let playerName="",totalAcc=0,learnedMap={},mistakes=[];
+let deck=[],deckIdx=0,current=null,answered=false;
+let lap=0,count=0,correct=0;
+let currentCat="all",currentMode="all";
+const MAX_Q=20;
+ 
+function saveAll(){
+  localStorage.setItem("j1_total",  totalAcc);
+  localStorage.setItem("j1_lrn",    JSON.stringify(learnedMap));
+  localStorage.setItem("j1_mis",    JSON.stringify(mistakes));
+  if(playerName) localStorage.setItem("j1_name", playerName);
+}
+function loadAll(){
+  totalAcc   = parseInt(localStorage.getItem("j1_total")||"0",10);
+  learnedMap = JSON.parse(localStorage.getItem("j1_lrn") ||"{}");
+  mistakes   = JSON.parse(localStorage.getItem("j1_mis") ||"[]");
+  const n=localStorage.getItem("j1_name");
+  if(n){playerName=n;const el=document.getElementById("playerName");el.value=n;el.readOnly=true;}
+}
+function lockName(){
+  const el=document.getElementById("playerName"),v=el.value.trim();
+  if(v){playerName=v;el.readOnly=true;saveAll();}
+}
+function updateChar(){
+  let ch=CHARS[0];
+  for(const c of CHARS) if(totalAcc>=c.score) ch=c;
+  document.getElementById("charIcon").textContent=ch.icon;
+  document.getElementById("charName").textContent=ch.name;
+  document.getElementById("totalAcc").textContent=totalAcc;
+  const idx=CHARS.indexOf(ch);
+  document.getElementById("charNext").textContent=
+    idx<CHARS.length-1?`あと ${CHARS[idx+1].score-totalAcc} 問で進化`:"MAX レベル達成！";
+}
+function updateMini(){
+  const total=DATA.length;
+  const learned=DATA.filter(d=>learnedMap[d.a]).length;
+  document.getElementById("sLearned").textContent=learned;
+  document.getElementById("sTotal").textContent=total;
+  document.getElementById("sUnlearned").textContent=total-learned;
+  document.getElementById("sPct").textContent=Math.floor(learned/total*100)+"%";
+}
+function onFilterChange(){
+  currentCat =document.getElementById("catSel").value;
+  currentMode=document.getElementById("modeSel").value;
+  applyAndStart();
+}
+function applyAndStart(){
+  showQuizUI();
+  let pool=DATA.filter(d=>{
+    if(currentCat!=="all"&&d.cat!==currentCat) return false;
+    if(currentMode==="learned"   &&!learnedMap[d.a]) return false;
+    if(currentMode==="unlearned" && learnedMap[d.a]) return false;
+    return true;
+  });
+  if(!pool.length){
+    document.getElementById("qText").textContent="対象の問題がありません。フィルタを変えてみてください。";
+    document.getElementById("choicesGrid").innerHTML="";
+    updateMini();return;
   }
-
-  function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
-    }
+  shuffle(pool);
+  deck=pool.slice(0,MAX_Q);
+  deckIdx=0;lap++;count=0;correct=0;
+  updateSummary();
+  document.getElementById("lapNum").textContent=lap;
+  showNext();
+}
+function showNext(){
+  if(deckIdx>=deck.length){showClear();return;}
+  current=deck[deckIdx];deckIdx++;
+  answered=false;
+  document.getElementById("qCat").textContent=current.cat;
+  document.getElementById("qCount").textContent=`${deckIdx} / ${deck.length}`;
+  document.getElementById("qText").textContent=current.q;
+  document.getElementById("resultMsg").textContent="";
+  updateProg(deckIdx,deck.length);
+  buildChoices(current);
+  updateSummary();
+}
+function buildChoices(item){
+  const grid=document.getElementById("choicesGrid");
+  grid.innerHTML="";
+  const col=CAT_COL[item.cat]||"col-1";
+  shuffleRet([item.a,...item.w]).forEach(ch=>{
+    const btn=document.createElement("button");
+    btn.className=`c-btn ${col}`;
+    btn.textContent=ch;
+    btn.onclick=()=>doAnswer(ch,btn);
+    grid.appendChild(btn);
+  });
+}
+function doAnswer(sel,btn){
+  if(!current||answered)return;
+  if(!playerName){alert("先に名前を入力してください！");return;}
+  answered=true;
+  const ok=sel===current.a;
+  count++;
+  document.querySelectorAll(".c-btn").forEach(b=>{
+    b.disabled=true;
+    if(b.textContent===current.a) b.classList.add("correct");
+    else if(b===btn&&!ok)         b.classList.add("wrong");
+  });
+  if(ok){
+    correct++;totalAcc++;
+    learnedMap[current.a]=true;
+    document.getElementById("resultMsg").innerHTML='<span class="ok">⭕ 正解！</span>';
+  }else{
+    learnedMap[current.a]=false;
+    addMistake(current);
+    document.getElementById("resultMsg").innerHTML=
+      `<span class="ng">❌ 不正解</span>&nbsp;<span style="color:#555;font-size:12px;">正解：${current.a}</span>`;
   }
-
-  function sortTypesWithOrder(typeList){
-    const orderIndex = new Map(TYPE_ORDER.map((t,i)=>[t,i]));
-    return [...typeList].sort((a,b)=>{
-      const ai = orderIndex.has(a) ? orderIndex.get(a) : 9999;
-      const bi = orderIndex.has(b) ? orderIndex.get(b) : 9999;
-      if (ai !== bi) return ai - bi;
-      return a.localeCompare(b, 'ja');
-    });
+  saveAll();updateChar();updateMini();updateSummary();
+  setTimeout(()=>{if(deckIdx<deck.length)showNext();else showClear();},ok?800:1800);
+}
+function skipQ(){if(deckIdx<deck.length)showNext();else showClear();}
+function updateProg(cur,total){
+  document.getElementById("progBar").style.width=(total?Math.round(cur/total*100):0)+"%";
+}
+function showClear(){
+  document.getElementById("quizArea").style.display="none";
+  document.getElementById("stageClear").style.display="block";
+  document.getElementById("clearSub").textContent=`正解 ${correct} / ${count} 問 ／ ${lap}周目クリア！`;
+  updateProg(deck.length,deck.length);
+}
+function showQuizUI(){
+  document.getElementById("quizArea").style.display="block";
+  document.getElementById("stageClear").style.display="none";
+}
+function nextLap(){showQuizUI();applyAndStart();}
+function updateSummary(){
+  document.getElementById("sc").textContent=correct;
+  document.getElementById("tc").textContent=count;
+  document.getElementById("remQ").textContent=Math.max(0,deck.length-deckIdx);
+}
+function addMistake(item){
+  if(!mistakes.some(m=>m.a===item.a)){
+    mistakes.push({a:item.a,cat:item.cat});
+    saveAll();updateMistakeBtn();
   }
-
-  function updateRemain(){
-    const remain = Math.max(0, deck.length - deckIndex);
-    document.getElementById('remain').textContent = String(remain);
-    document.getElementById('used').textContent = String(deck.length);
+}
+function removeMistake(a){
+  mistakes=mistakes.filter(m=>m.a!==a);
+  saveAll();updateMistakeBtn();renderMistakeList();
+}
+function updateMistakeBtn(){
+  document.getElementById("mistakeCnt").textContent=mistakes.length;
+  document.getElementById("mistakeBtn").style.display=mistakes.length>0?"inline-block":"none";
+}
+function openMistake(){renderMistakeList();document.getElementById("mistakeModal").style.display="block";}
+function closeMistake(){document.getElementById("mistakeModal").style.display="none";}
+function renderMistakeList(){
+  const cont=document.getElementById("mistakeList");
+  if(!mistakes.length){
+    cont.innerHTML="<div style='text-align:center;padding:20px;'>苦手リストは空です！完璧！🎉</div>";
+    return;
   }
-
-  function showQuizUI(){
-    document.getElementById("stageClear").style.display = "none";
-    document.getElementById("account").style.display = "block";
-    document.getElementById("buttons").style.display = "grid";
+  cont.innerHTML="";
+  mistakes.forEach(m=>{
+    const div=document.createElement("div");
+    div.className="m-item";
+    const safe=m.a.replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+    div.innerHTML=`<div><span class="m-name">${m.a}</span><span class="m-cat"> ／ ${m.cat}</span></div>
+      <button class="del-btn" onclick="removeMistake('${safe}')">削除</button>`;
+    cont.appendChild(div);
+  });
+}
+ 
+/* PDF モーダル
+   ★ GitHubにアップするとき、PDFファイルを同じフォルダに置いてください。
+   　 ファイル名：情報処理検定１級用語プリント課題_ビジネス情報_.pdf
+*/
+const PDF_FILE = "情報処理検定１級用語プリント課題_ビジネス情報_.pdf";
+function openPdf(){
+  const f=document.getElementById("pdfFrame");
+  if(!f.getAttribute("data-loaded")){f.src=PDF_FILE;f.setAttribute("data-loaded","1");}
+  document.getElementById("pdfModal").style.display="block";
+}
+function closePdf(){document.getElementById("pdfModal").style.display="none";}
+function closePdfOutside(e){if(e.target===document.getElementById("pdfModal"))closePdf();}
+ 
+function resetAll(){
+  if(!confirm("本当にリセットしますか？\n全ての学習記録・レベル・苦手リストが消えます。"))return;
+  localStorage.clear();location.reload();
+}
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];
   }
-
-  function showClearUI(){
-    document.getElementById("account").style.display = "none";
-    document.getElementById("buttons").style.display = "none";
-    document.getElementById("stageClear").style.display = "block";
-
-    // 終了画面に成績を表示
-    document.getElementById("scCorrect").textContent = String(correct);
-    document.getElementById("scCount").textContent = String(count);
-    const rate = count === 0 ? 0 : Math.round((correct / count) * 100);
-    document.getElementById("scRate").textContent = String(rate);
-
-    document.getElementById("lapMsg").textContent =
-      `${lap}周目が終了しました（${deck.length}問）`;
-  }
-
-  function prepareDeck(){
-    deck = [...items];
-    shuffle(deck);
-    deckIndex = 0;
-    lap += 1;
-    document.getElementById('lap').textContent = String(lap);
-    updateRemain();
-  }
-
-  function startNextLap(){
-    // 2周目へ（同じ20問を再シャッフル）
-    showQuizUI();
-    document.getElementById("result").textContent = "";
-    prepareDeck();
-    next();
-  }
-
-  function allowByFilter(xType, filterType){
-    if (filterType === '__ALL__') return true;
-    if (filterType === '__BS__') return BS_TYPES.has(xType);
-    if (filterType === '__PL__') return PL_TYPES.has(xType);
-    if (filterType === '__OTHER__') return xType === 'その他';
-    return xType === filterType;
-  }
-
-  function renderScore(){
-    document.getElementById("count").textContent = count;
-    document.getElementById("correct").textContent = correct;
-    const rate = count === 0 ? 0 : Math.round((correct / count) * 100);
-    document.getElementById("rate").textContent = rate;
-  }
-
-  function show(item){
-    current = item;
-    answered = false;
-    document.getElementById("account").textContent = item ? item.name : "—";
-    document.getElementById("result").textContent = "";
-  }
-
-  function answer(type){
-    if (!current || answered) return;
-    answered = true;
-    count++;
-
-    const ok = (type === current.type);
-    if (ok) correct++;
-
-    document.getElementById("result").innerHTML =
-      ok
-        ? `<span class="ok">正解！</span>（${current.name} → ${current.type}）`
-        : `<span class="ng">不正解</span>（あなた：${type} / 正解：${current.type}）`;
-
-    renderScore();
-  }
-
-  // ★ ここが「20問終わったら終了画面」本体
-  function next(){
-    if (!deck.length) return;
-
-    // 20問すべて出し終えたら終了画面へ（自動で2周目に入らない）
-    if (deckIndex >= deck.length) {
-      showClearUI();
-      return;
-    }
-
-    show(deck[deckIndex]);
-    deckIndex++;
-    updateRemain();
-  }
-
-  function resetScore(){
-    count = 0;
-    correct = 0;
-    renderScore();
-
-    lap = 0;
-    document.getElementById('lap').textContent = "0";
-
-    // 20問を再抽選（フィルタ条件は維持）
-    applyFiltersAndReady();
-  }
-
-  function buildButtons(typeList){
-    const wrap = document.getElementById('buttons');
-    wrap.innerHTML = '';
-    typeList.forEach(t => {
-      const btn = document.createElement('button');
-      btn.className = 'typeBtn';
-      const grp = TYPE_TO_GROUP.get(t) || 'other';
-      btn.classList.add(GROUP_TO_BTNCLASS[grp] || 'btn-other');
-      btn.textContent = t;
-      btn.onclick = () => answer(t);
-      wrap.appendChild(btn);
-    });
-  }
-
-  function buildTypeFilter(typeList){
-    const sel = document.getElementById('typeFilter');
-    const cur = sel.value;
-    sel.innerHTML = '';
-
-    const topOptions = [
-      { label: 'すべて', value: '__ALL__' },
-      { label: '貸借対照表（BS）', value: '__BS__' },
-      { label: '損益計算書（PL）', value: '__PL__' },
-      { label: 'その他のみ', value: '__OTHER__' },
-    ];
-    for (const o of topOptions) {
-      const opt = document.createElement('option');
-      opt.textContent = o.label;
-      opt.value = o.value;
-      sel.appendChild(opt);
-    }
-
-    const sep = document.createElement('option');
-    sep.textContent = '────────';
-    sep.value = '__SEP__';
-    sep.disabled = true;
-    sel.appendChild(sep);
-
-    for (const t of typeList) {
-      const opt = document.createElement('option');
-      opt.textContent = t;
-      opt.value = t;
-      sel.appendChild(opt);
-    }
-
-    const allowedVals = new Set(['__ALL__','__BS__','__PL__','__OTHER__', ...typeList]);
-    sel.value = allowedVals.has(cur) ? cur : '__ALL__';
-
-    sel.onchange = () => {
-      if (sel.value === '__SEP__') sel.value = '__ALL__';
-      applyFiltersAndReady();
-    };
-    document.getElementById('toggleOther').onchange = () => applyFiltersAndReady();
-  }
-
-  function applyFiltersAndReady(){
-    showQuizUI();
-
-    const includeOther = document.getElementById('toggleOther').checked;
-    const filterType = document.getElementById('typeFilter').value;
-
-    // 1) 条件で絞る
-    let filtered = allItems.filter(x => {
-      if (!includeOther && x.type === 'その他') return false;
-      if (!allowByFilter(x.type, filterType)) return false;
-      return true;
-    });
-
-    if (!filtered.length){
-      deck = []; deckIndex = 0; lap = 0;
-      document.getElementById('lap').textContent = "0";
-      document.getElementById('account').style.display = "block";
-      document.getElementById('account').textContent = '出題できるデータが0件';
-      document.getElementById('result').innerHTML = `<span class="warn">条件を見直してください。</span>`;
-      document.getElementById('used').textContent = "0";
-      document.getElementById('remain').textContent = "0";
-      return;
-    }
-
-    // 2) 最大20件に制限（毎回ランダム抽選）
-    if (filtered.length > MAX_QUESTIONS) {
-      const tmp = [...filtered];
-      shuffle(tmp);
-      filtered = tmp.slice(0, MAX_QUESTIONS);
-    }
-
-    items = filtered;
-
-    // 3) 山札準備（1周目開始）
-    lap = 0;
-    document.getElementById('lap').textContent = "0";
-    prepareDeck(); // lapが1になる
-    next();
-  }
-
-  async function loadCSV() {
-    const res = await fetch(CSV_PATH, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`accounts.csv が読めません（${CSV_PATH}）。同じ階層に置けているか確認してください。`);
-
-    const text = await res.text();
-    const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
-    if (lines.length < 2) throw new Error('CSVにデータ行がありません（見出し＋1行以上必要）。');
-
-    const header = lines.shift().split(',').map(s => s.trim());
-    const idxAccount = header.indexOf('account');
-    const idxType = header.indexOf('type');
-    if (idxAccount === -1 || idxType === -1) {
-      throw new Error('CSVの1行目（見出し）は「account,type」にしてください。');
-    }
-
-    const parsed = [];
-    for (const line of lines) {
-      const cols = line.split(',').map(s => s.trim());
-      const name = cols[idxAccount];
-      const rawType = cols[idxType];
-      if (!name || !rawType) continue;
-      parsed.push({ name, type: normalizeType(rawType) });
-    }
-    if (!parsed.length) throw new Error('有効なデータが0件でした。');
-
-    allItems = parsed;
-
-    const set = new Set(parsed.map(x => x.type));
-    types = sortTypesWithOrder(Array.from(set));
-
-    document.getElementById('total').textContent = String(allItems.length);
-    document.getElementById('typeCount').textContent = String(types.length);
-
-    buildTypeFilter(types);
-    buildButtons(types);
-
-    document.getElementById('hint').textContent =
-      `読み込みOK：${allItems.length}件 / タイプ：${types.length}種。`;
-
-    applyFiltersAndReady();
-  }
-
-  async function reload(){
-    showQuizUI();
-    document.getElementById("account").textContent = "読み込み中…";
-    document.getElementById("result").textContent = "";
-    document.getElementById("hint").textContent = "";
-    document.getElementById("buttons").innerHTML = "";
-    document.getElementById("typeFilter").innerHTML = `<option value="__ALL__">すべて</option>`;
-    document.getElementById('total').textContent = "0";
-    document.getElementById('typeCount').textContent = "0";
-    document.getElementById('lap').textContent = "0";
-    document.getElementById('used').textContent = "0";
-    document.getElementById('remain').textContent = "0";
-
-    allItems = [];
-    items = [];
-    types = [];
-    current = null;
-    answered = false;
-
-    deck = [];
-    deckIndex = 0;
-    lap = 0;
-
-    count = 0;
-    correct = 0;
-    renderScore();
-
-    try{
-      await loadCSV();
-    } catch(e){
-      document.getElementById("account").style.display = "block";
-      document.getElementById("account").textContent = "CSV読み込みエラー";
-      document.getElementById("result").innerHTML =
-        `<span class="warn">エラー：</span>${String(e.message).replace(/\n/g,'<br>')}`;
-    }
-  }
-
-  (async function init(){
-    await reload();
-  })();
+}
+function shuffleRet(arr){const a=[...arr];shuffle(a);return a;}
+ 
+(function init(){
+  loadAll();updateChar();updateMini();updateMistakeBtn();applyAndStart();
+})();
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
